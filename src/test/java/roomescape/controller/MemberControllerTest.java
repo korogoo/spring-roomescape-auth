@@ -7,6 +7,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.request;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -37,6 +38,55 @@ class MemberControllerTest {
 
     @MockitoBean
     private MemberService memberService;
+
+    @Test
+    void 일반_사용자는_회원가입할_수_있다() throws Exception {
+        //given
+        Member member = unSavedMember(MemberRole.NORMAL);
+        MemberLoginRequest request = loginRequestFrom(member);
+
+        when(memberService.save(any(), any()))
+            .thenReturn(member.withId(1L));
+
+        //when
+        ResultActions result = mockMvc
+            .perform(post("/members/normal/join")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)));
+
+        //then
+        result
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.id").value(1L));
+
+        verify(memberService, times(1)).save(request, MemberRole.NORMAL);
+        verifyNoMoreInteractions(memberService);
+    }
+
+    @Test
+    void 닉네임_중복으로_회원가입에_실패할_경우_에러_응답을_반환한다() throws Exception {
+        //given
+        Member member = unSavedMember(MemberRole.NORMAL);
+        MemberLoginRequest request = loginRequestFrom(member);
+
+        RoomEscapeException exception = new RoomEscapeException(ErrorCode.DUPLICATED_USERNAME);
+        doThrow(exception)
+            .when(memberService).save(any(), any());
+
+        //when
+        ResultActions result = mockMvc
+            .perform(post("/members/normal/join")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)));
+
+        //then
+        result
+            .andExpect(status().isConflict())
+            .andExpect(jsonPath("$.code").value(ErrorCode.DUPLICATED_USERNAME.name()));
+
+        verify(memberService, times(1)).save(request, MemberRole.NORMAL);
+        verifyNoMoreInteractions(memberService);
+    }
 
     @Test
     void 세션으로_로그인하면_쿠키에_JSESSIONID가_세팅된다() throws Exception {
@@ -87,6 +137,10 @@ class MemberControllerTest {
 
     private MemberLoginRequest loginRequestFrom(Member member) {
         return new MemberLoginRequest(member.getUsername(), member.getPassword());
+    }
+
+    private Member unSavedMember(MemberRole role) {
+        return new Member("name", "password", role);
     }
 
     private Member savedNormalMember() {
