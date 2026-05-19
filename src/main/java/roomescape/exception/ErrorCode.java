@@ -9,7 +9,8 @@ public enum ErrorCode {
     VALIDATION_FAILED(HttpStatus.BAD_REQUEST, "필수값이 누락되었거나 필드 유효성 검증에 실패했습니다"),
     FORBIDDEN(HttpStatus.FORBIDDEN, "접근 권한이 없습니다"),
     NOT_FOUND(HttpStatus.NOT_FOUND, "존재하지 않는 리소스입니다"),
-    UNAUTHORIZED_MEMBER(HttpStatus.UNAUTHORIZED, "아이디 또는 비밀번호가 올바르지 않습니다"),
+    UNAUTHORIZED_MEMBER(HttpStatus.UNAUTHORIZED, "인증되지 않은 사용자입니다"),
+    INVALID_USERNAME_AND_PASSWORD(HttpStatus.BAD_REQUEST, "아이디 또는 비밀번호가 올바르지 않습니다"),
     DUPLICATED_USERNAME(HttpStatus.CONFLICT, "이미 존재하는 아이디입니다"),
     INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "예상치 못한 서버 오류가 발생했습니다"),
     ;
