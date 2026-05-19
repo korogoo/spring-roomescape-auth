@@ -41,4 +41,8 @@ public class Member {
     public boolean isSamePassword(String password) {
         return this.password.equals(password);
     }
+
+    public boolean isAdmin() {
+        return role.isAdmin();
+    }
 }
