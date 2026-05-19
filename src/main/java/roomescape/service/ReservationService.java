@@ -1,11 +1,10 @@
 package roomescape.service;
 
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicLong;
 import org.springframework.stereotype.Service;
+import roomescape.domain.Member;
 import roomescape.domain.Reservation;
+import roomescape.dto.reservation.ReservationCreateRequest;
 import roomescape.repository.reservation.ReservationRepository;
 
 @Service
@@ -19,5 +18,11 @@ public class ReservationService {
 
     public List<Reservation> getReservations() {
         return reservationRepository.findAll();
+    }
+
+    public Reservation save(ReservationCreateRequest request, Member member) {
+        Reservation reservation = new Reservation(
+            member.getUsername(), request.date(), request.time(), request.theme());
+        return reservationRepository.save(reservation);
     }
 }

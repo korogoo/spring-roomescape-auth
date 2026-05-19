@@ -17,4 +17,13 @@ public class MemoryReservationRepository implements ReservationRepository {
     public List<Reservation> findAll() {
         return RESERVATIONS.values().stream().toList();
     }
+
+    @Override
+    public Reservation save(Reservation reservation) {
+        long id = ID_GENERATOR.getAndIncrement();
+        Reservation target = reservation.withId(id);
+
+        RESERVATIONS.put(id, target);
+        return target.withId(id);
+    }
 }
