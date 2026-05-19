@@ -1,12 +1,10 @@
 package roomescape.controller;
 
-import static org.hamcrest.Matchers.hasSize;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -14,7 +12,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.LocalDate;
 import java.time.LocalTime;
-import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
@@ -50,65 +47,6 @@ class ReservationControllerTest {
     private ReservationService reservationService;
 
     @Test
-    void 비로그인_사용자는_예약_전체조회를_할_수_없다() throws Exception {
-        // when
-        ResultActions result = mockMvc.perform(get("/reservations"));
-
-        // then
-        result
-            .andExpect(status().isUnauthorized())
-            .andExpect(jsonPath("$.code").value(ErrorCode.UNAUTHORIZED_MEMBER.name()));
-
-        verifyNoMoreInteractions(reservationService);
-    }
-
-    @Test
-    void 일반_사용자는_예약_전체조회를_할_수_없다() throws Exception {
-        // given
-        Member member = savedMember(MemberRole.NORMAL);
-
-        // when
-        ResultActions result = mockMvc
-            .perform(get("/reservations")
-                .sessionAttr(MEMBER_SESSION_KEY, member));
-
-        // then
-        result
-            .andExpect(status().isForbidden())
-            .andExpect(jsonPath("$.code").value(ErrorCode.FORBIDDEN.name()));
-
-        verifyNoMoreInteractions(reservationService);
-    }
-
-    @Test
-    void 관리자는_예약_전체조회를_할_수_있다() throws Exception {
-        // given
-        Reservation reservation = savedReservation();
-
-        when(reservationService.getReservations())
-            .thenReturn(List.of(
-                reservation.withId(1L), reservation.withId(2L), reservation.withId(3L)));
-
-        Member member = savedMember(MemberRole.ADMIN);
-
-        // when
-        ResultActions result = mockMvc
-            .perform(get("/reservations")
-                .sessionAttr(MEMBER_SESSION_KEY, member));
-
-        // then
-        result
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$", hasSize(3)))
-            .andExpect(jsonPath("$[0].id").value(1L))
-            .andExpect(jsonPath("$[1].id").value(2L))
-            .andExpect(jsonPath("$[2].id").value(3L));
-
-        verify(reservationService, times(1)).getReservations();
-        verifyNoMoreInteractions(reservationService);
-    }
-
-    @Test
     void 비로그인_사용자는_예약을_생성할_수_없다() throws Exception {
         // given
         ReservationCreateRequest request = new ReservationCreateRequest(TOMORROW, TIME, THEME);
@@ -127,9 +65,8 @@ class ReservationControllerTest {
         verifyNoMoreInteractions(reservationService);
     }
 
-    @ParameterizedTest
-    @EnumSource(MemberRole.class)
-    void 모든_사용자는_예약을_생성할_수_있다(MemberRole role) throws Exception {
+    @Test
+    void 일반_사용자는_예약을_생성할_수_있다() throws Exception {
         // given
         ReservationCreateRequest request = new ReservationCreateRequest(TOMORROW, TIME, THEME);
         Reservation savedReservation = savedReservation();
@@ -137,7 +74,7 @@ class ReservationControllerTest {
         when(reservationService.save(any(), any()))
             .thenReturn(savedReservation);
 
-        Member member = savedMember(role);
+        Member member = savedMember();
 
         // when
         ResultActions result = mockMvc
@@ -159,7 +96,7 @@ class ReservationControllerTest {
         return new Reservation(1L, NAME, TOMORROW, TIME, THEME);
     }
 
-    private Member savedMember(MemberRole role) {
-        return new Member(1L, NAME, "password", role);
+    private Member savedMember() {
+        return new Member(1L, NAME, "password", MemberRole.NORMAL);
     }
 }

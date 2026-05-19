@@ -20,12 +20,11 @@ class MemoryReservationRepositoryTest {
     private static final LocalDate TOMORROW = LocalDate.now().plusDays(1);
     private static final LocalTime TIME = LocalTime.of(12, 0);
     private static final String THEME = "theme";
-    private static final String MEMBER_SESSION_KEY = "sessionKey";
     public static final String NAME = "name";
 
     private ReservationRepository reservationRepository;
 
-    @Autowired  // 추가
+    @Autowired
     public MemoryReservationRepositoryTest(ReservationRepository reservationRepository) {
         this.reservationRepository = reservationRepository;
     }
@@ -42,15 +41,7 @@ class MemoryReservationRepositoryTest {
         assertThat(saved.getId()).isNotNull();
     }
 
-    private Reservation savedReservation() {
-        return new Reservation(1L, NAME, TOMORROW, TIME, THEME);
-    }
-
     private Reservation unSavedReservation() {
         return new Reservation(NAME, TOMORROW, TIME, THEME);
-    }
-
-    private Member savedMember(MemberRole role) {
-        return new Member(1L, NAME, "password", role);
     }
 }
