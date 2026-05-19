@@ -65,8 +65,9 @@ class ReservationControllerTest {
         verifyNoMoreInteractions(reservationService);
     }
 
-    @Test
-    void 일반_사용자는_예약을_생성할_수_있다() throws Exception {
+    @ParameterizedTest
+    @EnumSource(MemberRole.class)
+    void 모든_사용자는_예약을_생성할_수_있다() throws Exception {
         // given
         ReservationCreateRequest request = new ReservationCreateRequest(TOMORROW, TIME, THEME);
         Reservation savedReservation = savedReservation();
@@ -74,7 +75,7 @@ class ReservationControllerTest {
         when(reservationService.save(any(), any()))
             .thenReturn(savedReservation);
 
-        Member member = savedMember();
+        Member member = savedMember(MemberRole.NORMAL);
 
         // when
         ResultActions result = mockMvc
@@ -96,7 +97,7 @@ class ReservationControllerTest {
         return new Reservation(1L, NAME, TOMORROW, TIME, THEME);
     }
 
-    private Member savedMember() {
-        return new Member(1L, NAME, "password", MemberRole.NORMAL);
+    private Member savedMember(MemberRole role) {
+        return new Member(1L, NAME, "password", role);
     }
 }
