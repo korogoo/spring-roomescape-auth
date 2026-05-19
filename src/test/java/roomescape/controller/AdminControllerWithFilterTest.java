@@ -28,7 +28,7 @@ import roomescape.filter.AuthFilter;
 import roomescape.service.ReservationService;
 
 @ExtendWith(MockitoExtension.class)
-class AdminControllerTest {
+class AdminControllerWithFilterTest {
 
     private static final String MEMBER_SESSION_KEY = "sessionKey";
     private static final LocalDate TOMORROW = LocalDate.now().plusDays(1);
@@ -92,7 +92,6 @@ class AdminControllerTest {
 
         //then
         result
-            .andExpect(status().isOk())
             .andExpect(status().isOk())
             .andExpect(jsonPath("$", hasSize(3)))
             .andExpect(jsonPath("$[0].id").value(1L))

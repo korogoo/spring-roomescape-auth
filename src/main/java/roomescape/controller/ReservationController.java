@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import roomescape.annotation.LoginMember;
 import roomescape.domain.Member;
 import roomescape.domain.Reservation;
 import roomescape.dto.ResourceIdResponse;
@@ -32,19 +33,9 @@ public class ReservationController {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public ResourceIdResponse save(
-        HttpServletRequest httpRequest,
+        @LoginMember Member member,
         @Valid @RequestBody ReservationCreateRequest request
     ) {
-        HttpSession session = httpRequest.getSession(false);
-        if (session == null) {
-            throw new RoomEscapeException(ErrorCode.UNAUTHORIZED_MEMBER);
-        }
-
-        Member member = (Member) session.getAttribute(MEMBER_SESSION_KEY);
-        if (member == null) {
-            throw new RoomEscapeException(ErrorCode.UNAUTHORIZED_MEMBER);
-        }
-
         Reservation reservation = reservationService.save(request, member);
         return new ResourceIdResponse(reservation.getId());
     }

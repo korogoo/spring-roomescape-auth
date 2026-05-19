@@ -18,13 +18,13 @@ import roomescape.exception.ErrorResponse;
 public class AuthFilter implements Filter {
 
     private static final String MEMBER_SESSION_KEY = "sessionKey";
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
     private static final Set<String> WHITE_LIST = Set.of(
         "/members/login",
         "/members/normal/join",
         "/members/admin/join"
     );
 
-    private static final ObjectMapper objectMapper = new ObjectMapper();
 
     @Override
     public void doFilter(
@@ -65,7 +65,7 @@ public class AuthFilter implements Filter {
         httpResponse.setContentType("application/json");
         httpResponse.setCharacterEncoding("UTF-8");
         httpResponse.getWriter().write(
-            objectMapper.writeValueAsString(ErrorResponse.of(error))
+            OBJECT_MAPPER.writeValueAsString(ErrorResponse.of(error))
         );
     }
 }
