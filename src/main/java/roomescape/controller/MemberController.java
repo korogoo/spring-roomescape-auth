@@ -27,9 +27,18 @@ public class MemberController {
         this.memberService = memberService;
     }
 
-    @PostMapping("normal/join")
+    @PostMapping("/admin/join")
     @ResponseStatus(HttpStatus.CREATED)
-    public ResourceIdResponse join(
+    public ResourceIdResponse joinAdmin(
+        @Valid @RequestBody MemberLoginRequest request
+    ) {
+        Member member = memberService.save(request, MemberRole.ADMIN);
+        return new ResourceIdResponse(member.getId());
+    }
+
+    @PostMapping("/normal/join")
+    @ResponseStatus(HttpStatus.CREATED)
+    public ResourceIdResponse joinNormal(
         @Valid @RequestBody MemberLoginRequest request
     ) {
         Member member = memberService.save(request, MemberRole.NORMAL);

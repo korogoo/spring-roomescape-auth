@@ -40,6 +40,30 @@ class MemberControllerTest {
     private MemberService memberService;
 
     @Test
+    void 관리자는_회원가입할_수_있다() throws Exception {
+        //given
+        Member member = unSavedMember(MemberRole.ADMIN);
+        MemberLoginRequest request = loginRequestFrom(member);
+
+        when(memberService.save(any(), any()))
+            .thenReturn(member.withId(1L));
+
+        //when
+        ResultActions result = mockMvc
+            .perform(post("/members/admin/join")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)));
+
+        //then
+        result
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.id").value(1L));
+
+        verify(memberService, times(1)).save(request, MemberRole.ADMIN);
+        verifyNoMoreInteractions(memberService);
+    }
+
+    @Test
     void 일반_사용자는_회원가입할_수_있다() throws Exception {
         //given
         Member member = unSavedMember(MemberRole.NORMAL);
