@@ -1,6 +1,7 @@
 package roomescape.controller;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -20,6 +21,8 @@ import org.springframework.test.web.servlet.ResultActions;
 import roomescape.domain.Member;
 import roomescape.domain.MemberRole;
 import roomescape.dto.member.MemberLoginRequest;
+import roomescape.exception.ErrorCode;
+import roomescape.exception.RoomEscapeException;
 import roomescape.service.MemberService;
 
 @WebMvcTest(MemberController.class)
@@ -34,7 +37,6 @@ class MemberControllerTest {
 
     @MockitoBean
     private MemberService memberService;
-
 
     @Test
     void 세션으로_로그인하면_쿠키에_JSESSIONID가_세팅된다() throws Exception {
@@ -54,6 +56,30 @@ class MemberControllerTest {
         //then
         result.andExpect(status().isOk())
             .andExpect(request().sessionAttribute(MEMBER_SESSION_KEY, member));
+
+        verify(memberService, times(1)).login(request);
+        verifyNoMoreInteractions(memberService);
+    }
+
+    @Test
+    void 로그인에_실패하면_쿠키에_JSESSIONID가_세팅되지_않는다() throws Exception {
+        //given
+        MemberLoginRequest request = new MemberLoginRequest("other", "other");
+
+        RoomEscapeException exception = new RoomEscapeException(ErrorCode.UNAUTHORIZED_MEMBER);
+        doThrow(exception)
+            .when(memberService).login(any());
+
+        //when
+        ResultActions result = mockMvc
+            .perform(post("/members/login")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)));
+
+        //then
+        result
+            .andExpect(status().isUnauthorized())
+            .andExpect(request().sessionAttributeDoesNotExist(MEMBER_SESSION_KEY));
 
         verify(memberService, times(1)).login(request);
         verifyNoMoreInteractions(memberService);
