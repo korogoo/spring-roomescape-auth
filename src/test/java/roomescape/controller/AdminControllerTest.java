@@ -24,7 +24,7 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import roomescape.domain.Member;
 import roomescape.domain.MemberRole;
 import roomescape.domain.Reservation;
-import roomescape.filter.AdminAuthFilter;
+import roomescape.filter.AuthFilter;
 import roomescape.service.ReservationService;
 
 @ExtendWith(MockitoExtension.class)
@@ -47,7 +47,7 @@ class AdminControllerTest {
     void setFilter() {
         mockMvc = MockMvcBuilders
             .standaloneSetup(adminController)
-            .addFilter(new AdminAuthFilter())
+            .addFilter(new AuthFilter())
             .build();
     }
 

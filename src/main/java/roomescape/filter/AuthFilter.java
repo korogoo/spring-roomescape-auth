@@ -10,13 +10,19 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
+import java.util.Set;
 import roomescape.domain.Member;
 import roomescape.exception.ErrorCode;
 import roomescape.exception.ErrorResponse;
 
-public class AdminAuthFilter implements Filter {
+public class AuthFilter implements Filter {
 
     private static final String MEMBER_SESSION_KEY = "sessionKey";
+    private static final Set<String> WHITE_LIST = Set.of(
+        "/members/login",
+        "/members/normal/join",
+        "/members/admin/join"
+    );
 
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -28,6 +34,11 @@ public class AdminAuthFilter implements Filter {
     ) throws IOException, ServletException {
         HttpServletRequest httpRequest = (HttpServletRequest) servletRequest;
         HttpServletResponse httpResponse = (HttpServletResponse) servletResponse;
+
+        if (WHITE_LIST.contains(httpRequest.getRequestURI())) {
+            filterChain.doFilter(servletRequest, servletResponse);
+            return;
+        }
 
         HttpSession session = httpRequest.getSession(false);
 
