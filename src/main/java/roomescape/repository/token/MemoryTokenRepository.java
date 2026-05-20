@@ -17,7 +17,7 @@ public class MemoryTokenRepository implements TokenRepository {
     public Token save(Token token) {
         long id = ID_GENERATOR.getAndIncrement();
         Token tokenWithId = token.withId(id);
-        TOKENS.put(token.getTokenValue(), token);
+        TOKENS.put(token.getTokenValue(), tokenWithId);
         return tokenWithId;
     }
 
