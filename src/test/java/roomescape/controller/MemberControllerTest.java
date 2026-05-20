@@ -13,25 +13,28 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mock;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
+import roomescape.domain.AuthConstants;
 import roomescape.domain.Member;
 import roomescape.domain.MemberRole;
 import roomescape.dto.member.MemberLoginRequest;
 import roomescape.exception.ErrorCode;
 import roomescape.exception.RoomEscapeException;
+import roomescape.repository.token.TokenRepository;
 import roomescape.service.MemberService;
 
 @WebMvcTest(MemberController.class)
 class MemberControllerTest {
-
-    private static final String SESSION_KEY = "sessionKey";
-    private static final String SESSION_HEADER_KEY = "X-Session-Id";
 
     @Autowired
     private MockMvc mockMvc;
@@ -40,6 +43,53 @@ class MemberControllerTest {
 
     @MockitoBean
     private MemberService memberService;
+    @MockitoBean
+    private TokenRepository tokenRepository;
+
+    @Test
+    void 로그인하면_토큰이_헤더에_세팅된다() throws Exception {
+        Member member = savedNormalMember();
+        MemberLoginRequest request = loginRequestFrom(member);
+
+        when(memberService.login(any()))
+            .thenReturn(member);
+
+        ResultActions result = mockMvc
+            .perform(post("/members/login")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)));
+
+        result
+            .andExpect(status().isOk())
+            .andExpect(header().exists(AuthConstants.SESSION_HEADER_KEY));
+
+        verify(memberService, times(1)).login(request);
+        verifyNoMoreInteractions(memberService);
+    }
+
+    @Test
+    void 로그인에_실패하면_토큰이_헤더에_세팅되지_않는다() throws Exception {
+        //given
+        MemberLoginRequest request = new MemberLoginRequest("wrong", "wrong");
+
+        doThrow(new RoomEscapeException(ErrorCode.INVALID_USERNAME_AND_PASSWORD))
+            .when(memberService).login(any());
+
+        //when
+        ResultActions result = mockMvc
+            .perform(post("/members/login")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)));
+
+        //then
+        result
+            .andExpect(status().isBadRequest())
+            .andExpect(header().doesNotExist(AuthConstants.SESSION_HEADER_KEY))
+            .andExpect(jsonPath("$.code").value(ErrorCode.INVALID_USERNAME_AND_PASSWORD.name()));
+
+        verify(memberService, times(1)).login(request);
+        verifyNoMoreInteractions(memberService);
+    }
 
     @Test
     void 관리자는_회원가입할_수_있다() throws Exception {
@@ -114,76 +164,80 @@ class MemberControllerTest {
         verifyNoMoreInteractions(memberService);
     }
 
-    @Test
-    void 로그인하면_쿠키에_JSESSIONID가_세팅된다() throws Exception {
-        //given
-        Member member = savedNormalMember();
-        MemberLoginRequest request = loginRequestFrom(member);
+    @org.junit.jupiter.api.Disabled("현재는 사용하지 않는 인증/인가 방식 검증")
+    @Nested
+    class Disabled {
 
-        when(memberService.login(any()))
-            .thenReturn(member);
+        @Test
+        void 로그인하면_쿠키에_JSESSIONID가_세팅된다() throws Exception {
+            //given
+            Member member = savedNormalMember();
+            MemberLoginRequest request = loginRequestFrom(member);
 
-        //when
-        ResultActions result = mockMvc
-            .perform(post("/members/login")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)));
+            when(memberService.login(any()))
+                .thenReturn(member);
 
-        //then
-        result.andExpect(status().isOk())
-            .andExpect(request().sessionAttribute(SESSION_KEY, member));
+            //when
+            ResultActions result = mockMvc
+                .perform(post("/members/login")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(request)));
 
-        verify(memberService, times(1)).login(request);
-        verifyNoMoreInteractions(memberService);
-    }
+            //then
+            result.andExpect(status().isOk())
+                .andExpect(request().sessionAttribute(AuthConstants.SESSION_HEADER_KEY, member));
 
-    @Test
-    void 로그인에_실패하면_쿠키에_JSESSIONID가_세팅되지_않는다() throws Exception {
-        //given
-        MemberLoginRequest request = new MemberLoginRequest("other", "other");
+            verify(memberService, times(1)).login(request);
+            verifyNoMoreInteractions(memberService);
+        }
 
-        RoomEscapeException exception = new RoomEscapeException(ErrorCode.UNAUTHORIZED_MEMBER);
-        doThrow(exception)
-            .when(memberService).login(any());
+        @Test
+        void 로그인에_실패하면_쿠키에_JSESSIONID가_세팅되지_않는다() throws Exception {
+            //given
+            MemberLoginRequest request = new MemberLoginRequest("other", "other");
 
-        //when
-        ResultActions result = mockMvc
-            .perform(post("/members/login")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)));
+            RoomEscapeException exception = new RoomEscapeException(ErrorCode.UNAUTHORIZED_MEMBER);
+            doThrow(exception)
+                .when(memberService).login(any());
 
-        //then
-        result
-            .andExpect(status().isUnauthorized())
-            .andExpect(request().sessionAttributeDoesNotExist(SESSION_KEY));
+            //when
+            ResultActions result = mockMvc
+                .perform(post("/members/login")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(request)));
 
-        verify(memberService, times(1)).login(request);
-        verifyNoMoreInteractions(memberService);
-    }
+            //then
+            result
+                .andExpect(status().isUnauthorized())
+                .andExpect(request().sessionAttributeDoesNotExist(AuthConstants.SESSION_HEADER_KEY));
 
-    @Test
-    void 로그인하면_헤더에도_JSESSIONID가_세팅된다() throws Exception {
-        //given
-        Member member = savedNormalMember();
-        MemberLoginRequest request = loginRequestFrom(member);
+            verify(memberService, times(1)).login(request);
+            verifyNoMoreInteractions(memberService);
+        }
 
-        when(memberService.login(any()))
-            .thenReturn(member);
+        @Test
+        void 로그인하면_헤더에도_JSESSIONID가_세팅된다() throws Exception {
+            //given
+            Member member = savedNormalMember();
+            MemberLoginRequest request = loginRequestFrom(member);
 
-        //when
-        ResultActions result = mockMvc
-            .perform(post("/members/login")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)));
+            when(memberService.login(any()))
+                .thenReturn(member);
 
-        //then
-        result
-            .andExpect(status().isOk())
-            .andExpect(request().sessionAttribute(SESSION_KEY, member))
-            .andExpect(header().exists(SESSION_HEADER_KEY));
+            //when
+            ResultActions result = mockMvc
+                .perform(post("/members/login")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(request)));
 
-        verify(memberService, times(1)).login(request);
-        verifyNoMoreInteractions(memberService);
+            //then
+            result
+                .andExpect(status().isOk())
+                .andExpect(header().exists(AuthConstants.SESSION_HEADER_KEY));
+
+            verify(memberService, times(1)).login(request);
+            verifyNoMoreInteractions(memberService);
+        }
     }
 
     private MemberLoginRequest loginRequestFrom(Member member) {

@@ -94,7 +94,7 @@ class JdbcReservationRepositoryTest {
     }
 
     private Reservation unSavedReservation(LocalDate date, Member member) {
-        return new Reservation(member, date, TIME, THEME);
+        return new Reservation(member.getId(), date, TIME, THEME);
     }
 
     private Member savedMember(String name, MemberRole role) {

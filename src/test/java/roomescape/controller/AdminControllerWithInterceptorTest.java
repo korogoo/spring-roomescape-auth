@@ -12,7 +12,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.Optional;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -23,9 +25,11 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import roomescape.domain.AuthConstants;
 import roomescape.domain.Member;
 import roomescape.domain.MemberRole;
 import roomescape.domain.Reservation;
+import roomescape.domain.Token;
 import roomescape.interceptor.AuthInterceptor;
 import roomescape.repository.token.TokenRepository;
 import roomescape.service.ReservationService;
@@ -33,7 +37,7 @@ import roomescape.service.ReservationService;
 @ExtendWith(MockitoExtension.class)
 class AdminControllerWithInterceptorTest {
 
-    private static final String MEMBER_SESSION_KEY = "sessionKey";
+    private static final String SESSION_HEADER_KEY = AuthConstants.SESSION_HEADER_KEY;
     private static final LocalDate TOMORROW = LocalDate.now().plusDays(1);
     private static final LocalTime TIME = LocalTime.of(12, 0);
     private static final String THEME = "theme";
@@ -69,11 +73,13 @@ class AdminControllerWithInterceptorTest {
     void 일반_사용자는_접근할_수_없다() throws Exception {
         // given
         Member member = savedMember(MemberRole.NORMAL);
+        when(tokenRepository.findByTokenValue("test-token"))
+            .thenReturn(Optional.of(savedToken(member)));
 
         //when
         ResultActions result = mockMvc
             .perform(get("/admin/reservations")
-                .sessionAttr(MEMBER_SESSION_KEY, member));
+                .header(SESSION_HEADER_KEY, "test-token"));
 
         //then
         result.andExpect(status().isForbidden());
@@ -83,17 +89,18 @@ class AdminControllerWithInterceptorTest {
     void 관리자는_전체_예약을_조회할_수_있다() throws Exception {
         // given
         Reservation reservation = savedReservation();
+        Member member = savedMember(MemberRole.ADMIN);
 
+        when(tokenRepository.findByTokenValue("test-token"))
+            .thenReturn(Optional.of(savedToken(member)));
         when(reservationService.findAll())
             .thenReturn(List.of(
                 reservation.withId(1L), reservation.withId(2L), reservation.withId(3L)));
 
-        Member member = savedMember(MemberRole.ADMIN);
-
         //when
         ResultActions result = mockMvc
             .perform(get("/admin/reservations")
-                .sessionAttr(MEMBER_SESSION_KEY, member));
+                .header(SESSION_HEADER_KEY, "test-token"));
 
         //then
         result
@@ -105,6 +112,10 @@ class AdminControllerWithInterceptorTest {
 
         verify(reservationService, times(1)).findAll();
         verifyNoMoreInteractions(reservationService);
+    }
+
+    private Token savedToken(Member member) {
+        return new Token("test-token", LocalDateTime.now().plusDays(10), member.getId(), member.getRole());
     }
 
     private Reservation savedReservation() {

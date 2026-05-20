@@ -14,8 +14,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
@@ -25,11 +27,14 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
+import roomescape.domain.AuthConstants;
 import roomescape.domain.Member;
 import roomescape.domain.MemberRole;
 import roomescape.domain.Reservation;
+import roomescape.domain.Token;
 import roomescape.dto.reservation.ReservationCreateRequest;
 import roomescape.exception.ErrorCode;
+import roomescape.repository.token.TokenRepository;
 import roomescape.service.ReservationService;
 
 @WebMvcTest(ReservationController.class)
@@ -38,8 +43,7 @@ class ReservationControllerTest {
     private static final LocalDate TOMORROW = LocalDate.now().plusDays(1);
     private static final LocalTime TIME = LocalTime.of(12, 0);
     private static final String THEME = "theme";
-    private static final String SESSION_KEY = "sessionKey";
-    private static final String SESSION_HEADER_KEY = "X-Session-Id";
+    private static final String SESSION_HEADER_KEY = AuthConstants.SESSION_HEADER_KEY;
 
     @Autowired
     private MockMvc mockMvc;
@@ -49,6 +53,8 @@ class ReservationControllerTest {
 
     @MockitoBean
     private ReservationService reservationService;
+    @MockitoBean
+    private TokenRepository tokenRepository;
 
     @Test
     void 비로그인_사용자는_예약을_생성할_수_없다() throws Exception {
@@ -71,20 +77,21 @@ class ReservationControllerTest {
 
     @ParameterizedTest
     @EnumSource(MemberRole.class)
-    void 모든_사용자는_예약을_생성할_수_있다() throws Exception {
+    void 모든_사용자는_예약을_생성할_수_있다(MemberRole role) throws Exception {
         // given
         ReservationCreateRequest request = new ReservationCreateRequest(TOMORROW, TIME, THEME);
         Reservation savedReservation = savedReservation();
+        Member member = savedMember(role);
 
-        when(reservationService.save(any(), any()))
+        when(tokenRepository.findByTokenValue("test-token"))
+            .thenReturn(Optional.of(savedToken(member)));
+        when(reservationService.save(any(), anyLong()))
             .thenReturn(savedReservation);
-
-        Member member = savedMember(MemberRole.NORMAL);
 
         // when
         ResultActions result = mockMvc
             .perform(post("/reservations")
-                .sessionAttr(SESSION_KEY, member)
+                .header(SESSION_HEADER_KEY, "test-token")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)));
 
@@ -93,35 +100,7 @@ class ReservationControllerTest {
             .andExpect(status().isCreated())
             .andExpect(jsonPath("$.id").value(savedReservation.getId()));
 
-        verify(reservationService, times(1)).save(request, member);
-        verifyNoMoreInteractions(reservationService);
-    }
-
-    @Test
-    void 쿠키_인증으로_본인의_전체_예약을_조회할_수_있다() throws Exception {
-        // given
-        Reservation reservation = savedReservation();
-
-        when(reservationService.findAllByMemberId(anyLong()))
-            .thenReturn(List.of(
-                reservation.withId(1L), reservation.withId(2L), reservation.withId(3L)));
-
-        Member member = savedMember(MemberRole.NORMAL);
-
-        //when
-        ResultActions result = mockMvc
-            .perform(get("/reservations")
-                .sessionAttr(SESSION_KEY, member));
-
-        //then
-        result
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$", hasSize(3)))
-            .andExpect(jsonPath("$[0].id").value(1L))
-            .andExpect(jsonPath("$[1].id").value(2L))
-            .andExpect(jsonPath("$[2].id").value(3L));
-
-        verify(reservationService, times(1)).findAllByMemberId(member.getId());
+        verify(reservationService, times(1)).save(request, member.getId());
         verifyNoMoreInteractions(reservationService);
     }
 
@@ -129,17 +108,18 @@ class ReservationControllerTest {
     void 헤더_인증_정보로_본인의_전체_예약을_조회할_수_있다() throws Exception {
         // given
         Reservation reservation = savedReservation();
+        Member member = savedMember(MemberRole.NORMAL);
 
+        when(tokenRepository.findByTokenValue("test-token"))
+            .thenReturn(Optional.of(savedToken(member)));
         when(reservationService.findAllByMemberId(anyLong()))
             .thenReturn(List.of(
                 reservation.withId(1L), reservation.withId(2L), reservation.withId(3L)));
 
-        Member member = savedMember(MemberRole.NORMAL);
-
         //when
         ResultActions result = mockMvc
             .perform(get("/reservations")
-                .header(SESSION_HEADER_KEY, member.getId()));
+                .header(SESSION_HEADER_KEY, "test-token"));
 
         //then
         result
@@ -151,6 +131,10 @@ class ReservationControllerTest {
 
         verify(reservationService, times(1)).findAllByMemberId(member.getId());
         verifyNoMoreInteractions(reservationService);
+    }
+
+    private Token savedToken(Member member) {
+        return new Token("test-token", LocalDateTime.now().plusDays(10), member.getId(), member.getRole());
     }
 
     private Reservation savedReservation() {

@@ -45,7 +45,7 @@ class ReservationServiceTest {
             .thenReturn(savedReservation());
 
         //when
-        Reservation saved = reservationService.save(request, member);
+        Reservation saved = reservationService.save(request, member.getId());
 
         //then
         assertThat(saved.getId()).isNotNull();
