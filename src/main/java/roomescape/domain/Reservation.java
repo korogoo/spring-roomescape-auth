@@ -7,29 +7,33 @@ import java.util.Objects;
 public class Reservation {
 
     private final Long id;
-    private final String username;
+    private final Member member;
     private final LocalDate date;
     private final LocalTime time;
     private final String theme;
 
-    public Reservation(Long id, String username, LocalDate date, LocalTime time, String theme) {
+    public Reservation(Long id, Member member, LocalDate date, LocalTime time, String theme) {
         this.id = id;
-        this.username = username;
+        this.member = member;
         this.date = date;
         this.time = time;
         this.theme = theme;
     }
 
-    public Reservation(String username, LocalDate date, LocalTime time, String theme) {
-        this(null, username, date, time, theme);
+    public Reservation(Member member, LocalDate date, LocalTime time, String theme) {
+        this(null, member, date, time, theme);
     }
 
     public Long getId() {
         return id;
     }
 
-    public String getUsername() {
-        return username;
+    public long getMemberId() {
+        return member.getId();
+    }
+
+    public String getMemberUsername() {
+        return member.getUsername();
     }
 
     public LocalDate getDate() {
@@ -45,7 +49,7 @@ public class Reservation {
     }
 
     public Reservation withId(Long key) {
-        return new Reservation(key, username, date, time, theme);
+        return new Reservation(key, member, date, time, theme);
     }
 
     @Override

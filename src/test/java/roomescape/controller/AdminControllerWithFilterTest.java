@@ -34,7 +34,6 @@ class AdminControllerWithFilterTest {
     private static final LocalDate TOMORROW = LocalDate.now().plusDays(1);
     private static final LocalTime TIME = LocalTime.of(12, 0);
     private static final String THEME = "theme";
-    public static final String NAME = "name";
 
     @Mock
     private ReservationService reservationService;
@@ -103,7 +102,7 @@ class AdminControllerWithFilterTest {
     }
 
     private Reservation savedReservation() {
-        return new Reservation(1L, NAME, TOMORROW, TIME, THEME);
+        return new Reservation(1L, savedMember(MemberRole.NORMAL), TOMORROW, TIME, THEME);
     }
 
     private Member savedMember(MemberRole role) {

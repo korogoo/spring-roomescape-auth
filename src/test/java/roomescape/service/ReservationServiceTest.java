@@ -1,13 +1,11 @@
 package roomescape.service;
 
-import static org.assertj.core.api.Assertions.anyOf;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
@@ -26,8 +24,6 @@ class ReservationServiceTest {
     private static final LocalDate TOMORROW = LocalDate.now().plusDays(1);
     private static final LocalTime TIME = LocalTime.of(12, 0);
     private static final String THEME = "theme";
-    private static final String MEMBER_SESSION_KEY = "sessionKey";
-    public static final String NAME = "name";
 
     @Mock
     private ReservationRepository reservationRepository;
@@ -52,11 +48,11 @@ class ReservationServiceTest {
         assertThat(saved.getId()).isNotNull();
     }
 
-    private Member savedMember(MemberRole role) {
-        return new Member(1L, NAME, "password", role);
+    private Reservation savedReservation() {
+        return new Reservation(1L, savedMember(MemberRole.NORMAL), TOMORROW, TIME, "theme");
     }
 
-    private Reservation savedReservation() {
-        return new Reservation(1L, NAME, TOMORROW, TIME, THEME);
+    private Member savedMember(MemberRole role) {
+        return new Member(1L, "name", "password", role);
     }
 }

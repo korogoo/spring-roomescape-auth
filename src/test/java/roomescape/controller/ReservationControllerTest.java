@@ -35,7 +35,6 @@ class ReservationControllerTest {
     private static final LocalTime TIME = LocalTime.of(12, 0);
     private static final String THEME = "theme";
     private static final String MEMBER_SESSION_KEY = "sessionKey";
-    public static final String NAME = "name";
 
     @Autowired
     private MockMvc mockMvc;
@@ -94,10 +93,10 @@ class ReservationControllerTest {
     }
 
     private Reservation savedReservation() {
-        return new Reservation(1L, NAME, TOMORROW, TIME, THEME);
+        return new Reservation(1L, savedMember(MemberRole.NORMAL), TOMORROW, TIME, THEME);
     }
 
     private Member savedMember(MemberRole role) {
-        return new Member(1L, NAME, "password", role);
+        return new Member(1L, "name", "password", role);
     }
 }

@@ -1,11 +1,13 @@
 package roomescape.controller;
 
 import static org.hamcrest.Matchers.hasSize;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -35,7 +37,6 @@ class AdminControllerWithInterceptorTest {
     private static final LocalDate TOMORROW = LocalDate.now().plusDays(1);
     private static final LocalTime TIME = LocalTime.of(12, 0);
     private static final String THEME = "theme";
-    public static final String NAME = "name";
 
     @Mock
     private ReservationService reservationService;
@@ -105,7 +106,7 @@ class AdminControllerWithInterceptorTest {
     }
 
     private Reservation savedReservation() {
-        return new Reservation(1L, NAME, TOMORROW, TIME, THEME);
+        return new Reservation(1L, savedMember(MemberRole.NORMAL), TOMORROW, TIME, THEME);
     }
 
     private Member savedMember(MemberRole role) {
