@@ -16,13 +16,17 @@ public class ReservationService {
         this.reservationRepository = reservationRepository;
     }
 
-    public List<Reservation> getReservations() {
+    public List<Reservation> findAll() {
         return reservationRepository.findAll();
     }
 
-    public Reservation save(ReservationCreateRequest request, Member member) {
+    public Reservation save(ReservationCreateRequest request, long memberId) {
         Reservation reservation = new Reservation(
-            member, request.date(), request.time(), request.theme());
+            memberId, request.date(), request.time(), request.theme());
         return reservationRepository.save(reservation);
+    }
+
+    public List<Reservation> findAllByMemberId(long memberId) {
+        return reservationRepository.findAllByMemberId(memberId);
     }
 }

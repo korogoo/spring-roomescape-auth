@@ -7,6 +7,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.request;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -29,7 +30,8 @@ import roomescape.service.MemberService;
 @WebMvcTest(MemberController.class)
 class MemberControllerTest {
 
-    private static final String MEMBER_SESSION_KEY = "sessionKey";
+    private static final String SESSION_KEY = "sessionKey";
+    private static final String SESSION_HEADER_KEY = "X-Session-Id";
 
     @Autowired
     private MockMvc mockMvc;
@@ -113,7 +115,7 @@ class MemberControllerTest {
     }
 
     @Test
-    void 세션으로_로그인하면_쿠키에_JSESSIONID가_세팅된다() throws Exception {
+    void 로그인하면_쿠키에_JSESSIONID가_세팅된다() throws Exception {
         //given
         Member member = savedNormalMember();
         MemberLoginRequest request = loginRequestFrom(member);
@@ -129,7 +131,7 @@ class MemberControllerTest {
 
         //then
         result.andExpect(status().isOk())
-            .andExpect(request().sessionAttribute(MEMBER_SESSION_KEY, member));
+            .andExpect(request().sessionAttribute(SESSION_KEY, member));
 
         verify(memberService, times(1)).login(request);
         verifyNoMoreInteractions(memberService);
@@ -153,7 +155,32 @@ class MemberControllerTest {
         //then
         result
             .andExpect(status().isUnauthorized())
-            .andExpect(request().sessionAttributeDoesNotExist(MEMBER_SESSION_KEY));
+            .andExpect(request().sessionAttributeDoesNotExist(SESSION_KEY));
+
+        verify(memberService, times(1)).login(request);
+        verifyNoMoreInteractions(memberService);
+    }
+
+    @Test
+    void 로그인하면_헤더에도_JSESSIONID가_세팅된다() throws Exception {
+        //given
+        Member member = savedNormalMember();
+        MemberLoginRequest request = loginRequestFrom(member);
+
+        when(memberService.login(any()))
+            .thenReturn(member);
+
+        //when
+        ResultActions result = mockMvc
+            .perform(post("/members/login")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)));
+
+        //then
+        result
+            .andExpect(status().isOk())
+            .andExpect(request().sessionAttribute(SESSION_KEY, member))
+            .andExpect(header().exists(SESSION_HEADER_KEY));
 
         verify(memberService, times(1)).login(request);
         verifyNoMoreInteractions(memberService);

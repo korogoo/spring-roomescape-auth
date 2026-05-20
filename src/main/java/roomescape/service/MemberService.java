@@ -31,7 +31,7 @@ public class MemberService {
 
     public Member login(MemberLoginRequest request) {
         Member member = memberRepository.findByUsername(request.username())
-            .orElseThrow(() -> new RoomEscapeException(ErrorCode.UNAUTHORIZED_MEMBER));
+            .orElseThrow(() -> new RoomEscapeException(ErrorCode.MEMBER_NOT_FOUND));
 
         if (!member.isSamePassword(request.password())) {
             throw new RoomEscapeException(ErrorCode.UNAUTHORIZED_MEMBER);

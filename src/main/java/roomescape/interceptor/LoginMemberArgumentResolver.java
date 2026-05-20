@@ -11,7 +11,7 @@ import roomescape.annotation.LoginMember;
 
 public class LoginMemberArgumentResolver implements HandlerMethodArgumentResolver {
 
-    private static final String MEMBER_SESSION_KEY = "sessionKey";
+    private static final String LOGIN_MEMBER_ATTRIBUTE = "loginMember";
 
     @Override
     public boolean supportsParameter(MethodParameter parameter) {
@@ -26,7 +26,6 @@ public class LoginMemberArgumentResolver implements HandlerMethodArgumentResolve
         WebDataBinderFactory binderFactory
     ) throws Exception {
         HttpServletRequest httpRequest = webRequest.getNativeRequest(HttpServletRequest.class);
-        HttpSession session = httpRequest.getSession(false);
-        return session.getAttribute(MEMBER_SESSION_KEY);
+        return httpRequest.getAttribute(LOGIN_MEMBER_ATTRIBUTE);
     }
 }

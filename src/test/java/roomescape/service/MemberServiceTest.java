@@ -110,7 +110,7 @@ class MemberServiceTest {
         //when & then
         assertThatThrownBy(() -> memberService.login(request))
             .isInstanceOf(RoomEscapeException.class)
-            .hasMessageContaining(ErrorCode.UNAUTHORIZED_MEMBER.getMessage());
+            .hasMessageContaining(ErrorCode.MEMBER_NOT_FOUND.getMessage());
 
         verify(memberRepository, times(1)).findByUsername(request.username());
         verifyNoMoreInteractions(memberRepository);
@@ -128,12 +128,11 @@ class MemberServiceTest {
         //when & then
         assertThatThrownBy(() -> memberService.login(request))
             .isInstanceOf(RoomEscapeException.class)
-            .hasMessageContaining(ErrorCode.UNAUTHORIZED_MEMBER.getMessage());
+            .hasMessageContaining(ErrorCode.MEMBER_NOT_FOUND.getMessage());
 
         verify(memberRepository, times(1)).findByUsername(request.username());
         verifyNoMoreInteractions(memberRepository);
     }
-
 
     private MemberLoginRequest loginRequestFrom(Member member) {
         return new MemberLoginRequest(member.getUsername(), member.getPassword());

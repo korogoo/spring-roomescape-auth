@@ -78,7 +78,7 @@ class AdminControllerWithFilterTest {
         // given
         Reservation reservation = savedReservation();
 
-        when(reservationService.getReservations())
+        when(reservationService.findAll())
             .thenReturn(List.of(
                 reservation.withId(1L), reservation.withId(2L), reservation.withId(3L)));
 
@@ -97,7 +97,7 @@ class AdminControllerWithFilterTest {
             .andExpect(jsonPath("$[1].id").value(2L))
             .andExpect(jsonPath("$[2].id").value(3L));
 
-        verify(reservationService, times(1)).getReservations();
+        verify(reservationService, times(1)).findAll();
         verifyNoMoreInteractions(reservationService);
     }
 

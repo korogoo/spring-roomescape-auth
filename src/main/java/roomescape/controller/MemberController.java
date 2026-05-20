@@ -1,30 +1,36 @@
 package roomescape.controller;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
+import java.time.LocalDateTime;
+import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import roomescape.domain.AuthConstants;
 import roomescape.domain.Member;
 import roomescape.domain.MemberRole;
+import roomescape.domain.Token;
 import roomescape.dto.ResourceIdResponse;
 import roomescape.dto.member.MemberLoginRequest;
+import roomescape.repository.token.TokenRepository;
 import roomescape.service.MemberService;
 
 @RestController
 @RequestMapping("/members")
 public class MemberController {
 
-    private static final String MEMBER_SESSION_KEY = "sessionKey";
-
     private final MemberService memberService;
+    private final TokenRepository tokenRepository;
 
-    public MemberController(MemberService memberService) {
+    public MemberController(MemberService memberService, TokenRepository tokenRepository) {
         this.memberService = memberService;
+        this.tokenRepository = tokenRepository;
     }
 
     @PostMapping("/admin/join")
@@ -48,12 +54,16 @@ public class MemberController {
     @PostMapping("/login")
     @ResponseStatus(HttpStatus.OK)
     public void login(
-        HttpServletRequest httpRequest,
+        HttpServletResponse httpResponse,
         @Valid @RequestBody MemberLoginRequest request
     ) {
         Member member = memberService.login(request);
 
-        HttpSession session = httpRequest.getSession(true);
-        session.setAttribute(MEMBER_SESSION_KEY, member);
+        String uuid = UUID.randomUUID().toString();
+        LocalDateTime expiredAt = LocalDateTime.now().plusDays(10);
+        Token token = new Token(uuid, expiredAt, member.getId(), member.getRole());
+        tokenRepository.save(token);
+
+        httpResponse.setHeader(AuthConstants.SESSION_HEADER_KEY, uuid);
     }
 }

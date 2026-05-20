@@ -70,4 +70,17 @@ public class JdbcReservationRepository implements ReservationRepository {
         }
         return reservation.withId(key.longValue());
     }
+
+    @Override
+    public List<Reservation> findAllByMemberId(Long memberId) {
+        return jdbcTemplate.query("""
+                SELECT r.id, r.res_date, r.res_time, r.theme,
+                           m.id as m_id, m.username, m.password, m.member_role
+                FROM reservation r
+                JOIN member m ON r.member_id = m.id
+                WHERE m.id = ?
+                """,
+            RESERVATION_ROW_MAPPER,
+            memberId);
+    }
 }

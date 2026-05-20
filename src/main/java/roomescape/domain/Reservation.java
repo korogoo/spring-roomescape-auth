@@ -20,8 +20,8 @@ public class Reservation {
         this.theme = theme;
     }
 
-    public Reservation(Member member, LocalDate date, LocalTime time, String theme) {
-        this(null, member, date, time, theme);
+    public Reservation(long memberId, LocalDate date, LocalTime time, String theme) {
+        this(null, new Member(memberId, null, null, null), date, time, theme);
     }
 
     public Long getId() {
@@ -48,8 +48,8 @@ public class Reservation {
         return theme;
     }
 
-    public Reservation withId(Long key) {
-        return new Reservation(key, member, date, time, theme);
+    public Reservation withId(long id) {
+        return new Reservation(id, member, date, time, theme);
     }
 
     @Override

@@ -2,15 +2,20 @@ package roomescape.interceptor;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
 import org.springframework.web.servlet.HandlerInterceptor;
-import roomescape.domain.Member;
+import roomescape.domain.AuthConstants;
+import roomescape.domain.Token;
 import roomescape.exception.ErrorCode;
 import roomescape.exception.RoomEscapeException;
+import roomescape.repository.token.TokenRepository;
 
 public class AuthInterceptor implements HandlerInterceptor {
 
-    private static final String MEMBER_SESSION_KEY = "sessionKey";
+    private final TokenRepository tokenRepository;
+
+    public AuthInterceptor(TokenRepository tokenRepository) {
+        this.tokenRepository = tokenRepository;
+    }
 
     @Override
     public boolean preHandle(
@@ -18,20 +23,21 @@ public class AuthInterceptor implements HandlerInterceptor {
         HttpServletResponse response,
         Object handler
     ) throws Exception {
-        HttpSession session = request.getSession(false);
+        String tokenValue = request.getHeader(AuthConstants.SESSION_HEADER_KEY);
 
-        if (session == null) {
+        if (tokenValue == null) {
             throw new RoomEscapeException(ErrorCode.UNAUTHORIZED_MEMBER);
         }
-        Member member = (Member) session.getAttribute(MEMBER_SESSION_KEY);
-        if (member == null) {
-            throw new RoomEscapeException(ErrorCode.UNAUTHORIZED_MEMBER);
+        Token token = tokenRepository.findByTokenValue(tokenValue)
+            .orElseThrow(() -> new RoomEscapeException(ErrorCode.UNAUTHORIZED_MEMBER));
+        if (token.isExpired()) {
+            throw new RoomEscapeException(ErrorCode.EXPIRED_TOKEN);
         }
-
-        if (request.getRequestURI().startsWith("/admin") && !member.isAdmin()) {
+        if (request.getRequestURI().startsWith("/admin") && !token.isAdminMember()) {
             throw new RoomEscapeException(ErrorCode.FORBIDDEN);
         }
 
+        request.setAttribute(AuthConstants.LOGIN_MEMBER_ATTRIBUTE, token.getLoginMember());
         return true;
     }
 }

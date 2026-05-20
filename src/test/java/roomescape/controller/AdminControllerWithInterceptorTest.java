@@ -26,8 +26,8 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import roomescape.domain.Member;
 import roomescape.domain.MemberRole;
 import roomescape.domain.Reservation;
-import roomescape.filter.AuthFilter;
 import roomescape.interceptor.AuthInterceptor;
+import roomescape.repository.token.TokenRepository;
 import roomescape.service.ReservationService;
 
 @ExtendWith(MockitoExtension.class)
@@ -40,6 +40,8 @@ class AdminControllerWithInterceptorTest {
 
     @Mock
     private ReservationService reservationService;
+    @Mock
+    private TokenRepository tokenRepository;
     private MockMvc mockMvc;
 
     @InjectMocks
@@ -49,7 +51,7 @@ class AdminControllerWithInterceptorTest {
     void setFilter() {
         mockMvc = MockMvcBuilders
             .standaloneSetup(adminController)
-            .addInterceptors(new AuthInterceptor())
+            .addInterceptors(new AuthInterceptor(tokenRepository))
             .setControllerAdvice(new GlobalExceptionHandler())
             .build();
     }
@@ -82,7 +84,7 @@ class AdminControllerWithInterceptorTest {
         // given
         Reservation reservation = savedReservation();
 
-        when(reservationService.getReservations())
+        when(reservationService.findAll())
             .thenReturn(List.of(
                 reservation.withId(1L), reservation.withId(2L), reservation.withId(3L)));
 
@@ -101,7 +103,7 @@ class AdminControllerWithInterceptorTest {
             .andExpect(jsonPath("$[1].id").value(2L))
             .andExpect(jsonPath("$[2].id").value(3L));
 
-        verify(reservationService, times(1)).getReservations();
+        verify(reservationService, times(1)).findAll();
         verifyNoMoreInteractions(reservationService);
     }
 

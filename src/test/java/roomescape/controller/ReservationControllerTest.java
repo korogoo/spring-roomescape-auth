@@ -1,10 +1,13 @@
 package roomescape.controller;
 
+import static org.hamcrest.Matchers.hasSize;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -12,6 +15,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
@@ -34,7 +38,8 @@ class ReservationControllerTest {
     private static final LocalDate TOMORROW = LocalDate.now().plusDays(1);
     private static final LocalTime TIME = LocalTime.of(12, 0);
     private static final String THEME = "theme";
-    private static final String MEMBER_SESSION_KEY = "sessionKey";
+    private static final String SESSION_KEY = "sessionKey";
+    private static final String SESSION_HEADER_KEY = "X-Session-Id";
 
     @Autowired
     private MockMvc mockMvc;
@@ -79,7 +84,7 @@ class ReservationControllerTest {
         // when
         ResultActions result = mockMvc
             .perform(post("/reservations")
-                .sessionAttr(MEMBER_SESSION_KEY, member)
+                .sessionAttr(SESSION_KEY, member)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)));
 
@@ -89,6 +94,62 @@ class ReservationControllerTest {
             .andExpect(jsonPath("$.id").value(savedReservation.getId()));
 
         verify(reservationService, times(1)).save(request, member);
+        verifyNoMoreInteractions(reservationService);
+    }
+
+    @Test
+    void 쿠키_인증으로_본인의_전체_예약을_조회할_수_있다() throws Exception {
+        // given
+        Reservation reservation = savedReservation();
+
+        when(reservationService.findAllByMemberId(anyLong()))
+            .thenReturn(List.of(
+                reservation.withId(1L), reservation.withId(2L), reservation.withId(3L)));
+
+        Member member = savedMember(MemberRole.NORMAL);
+
+        //when
+        ResultActions result = mockMvc
+            .perform(get("/reservations")
+                .sessionAttr(SESSION_KEY, member));
+
+        //then
+        result
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$", hasSize(3)))
+            .andExpect(jsonPath("$[0].id").value(1L))
+            .andExpect(jsonPath("$[1].id").value(2L))
+            .andExpect(jsonPath("$[2].id").value(3L));
+
+        verify(reservationService, times(1)).findAllByMemberId(member.getId());
+        verifyNoMoreInteractions(reservationService);
+    }
+
+    @Test
+    void 헤더_인증_정보로_본인의_전체_예약을_조회할_수_있다() throws Exception {
+        // given
+        Reservation reservation = savedReservation();
+
+        when(reservationService.findAllByMemberId(anyLong()))
+            .thenReturn(List.of(
+                reservation.withId(1L), reservation.withId(2L), reservation.withId(3L)));
+
+        Member member = savedMember(MemberRole.NORMAL);
+
+        //when
+        ResultActions result = mockMvc
+            .perform(get("/reservations")
+                .header(SESSION_HEADER_KEY, member.getId()));
+
+        //then
+        result
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$", hasSize(3)))
+            .andExpect(jsonPath("$[0].id").value(1L))
+            .andExpect(jsonPath("$[1].id").value(2L))
+            .andExpect(jsonPath("$[2].id").value(3L));
+
+        verify(reservationService, times(1)).findAllByMemberId(member.getId());
         verifyNoMoreInteractions(reservationService);
     }
 

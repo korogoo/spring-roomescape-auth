@@ -64,10 +64,12 @@ public class GlobalExceptionHandler {
 
     private void printWarnStatus(Exception e) {
         log.warn("[{}] {}", e.getClass().getSimpleName(), e.getMessage());
+        e.printStackTrace();
     }
 
     private void printErrorStatus(Exception e) {
         log.error("[{}] {}", e.getClass().getSimpleName(), e.getMessage(), e);
+        e.printStackTrace();
     }
 
     private ResponseEntity<ErrorResponse> parseOf(ErrorCode errorCode) {

@@ -2,10 +2,13 @@ package roomescape.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.when;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.List;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
@@ -46,6 +49,34 @@ class ReservationServiceTest {
 
         //then
         assertThat(saved.getId()).isNotNull();
+    }
+
+    @Test
+    void 모든_예약을_조회할_수_있다() {
+        //given
+        when(reservationRepository.findAllByMemberId(anyLong()))
+            .thenReturn(List.of(
+                savedReservation().withId(1L), savedReservation().withId(2L), savedReservation().withId(3L)));
+
+        //when
+        List<Reservation> all = reservationService.findAllByMemberId(1L);
+
+        //then
+        assertThat(all).hasSize(3);
+    }
+
+    @Test
+    void 본인의_모든_예약을_조회할_수_있다() {
+        //given
+        when(reservationRepository.findAllByMemberId(anyLong()))
+            .thenReturn(List.of(
+                savedReservation().withId(1L), savedReservation().withId(2L), savedReservation().withId(3L)));
+
+        //when
+        List<Reservation> all = reservationService.findAllByMemberId(1L);
+
+        //then
+        assertThat(all).hasSize(3);
     }
 
     private Reservation savedReservation() {

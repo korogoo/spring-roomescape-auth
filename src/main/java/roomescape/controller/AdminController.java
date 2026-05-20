@@ -22,7 +22,7 @@ public class AdminController {
     @GetMapping("/reservations")
     @ResponseStatus(HttpStatus.OK)
     public List<ReservationResponse> findAllReservations() {
-        return reservationService.getReservations().stream()
+        return reservationService.findAll().stream()
             .map(ReservationResponse::from)
             .toList();
     }

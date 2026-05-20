@@ -9,13 +9,20 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import roomescape.filter.AuthFilter;
 import roomescape.interceptor.AuthInterceptor;
 import roomescape.interceptor.LoginMemberArgumentResolver;
+import roomescape.repository.token.TokenRepository;
 
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
 
+    private final TokenRepository tokenRepository;
+
+    public WebConfig(TokenRepository tokenRepository) {
+        this.tokenRepository = tokenRepository;
+    }
+
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
-        registry.addInterceptor(new AuthInterceptor())
+        registry.addInterceptor(new AuthInterceptor(tokenRepository))
             .addPathPatterns("/**")
             .excludePathPatterns(List.of(
                 "/members/login",

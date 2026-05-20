@@ -36,7 +36,7 @@ class JdbcReservationRepositoryTest {
     @Test
     void 예약을_저장한다() {
         //given
-        Member member = savedMember(MemberRole.NORMAL);
+        Member member = savedMember("name", MemberRole.NORMAL);
         Member savedMember = memberRepository.save(member);
 
         Reservation target = unSavedReservation(TOMORROW, savedMember);
@@ -56,7 +56,7 @@ class JdbcReservationRepositoryTest {
     @Test
     void 전체_예약을_조회한다() {
         //given
-        Member member = savedMember(MemberRole.NORMAL);
+        Member member = savedMember("name",MemberRole.NORMAL);
         Member savedMember = memberRepository.save(member);
 
         reservationRepository.save(unSavedReservation(TOMORROW, savedMember));
@@ -69,11 +69,35 @@ class JdbcReservationRepositoryTest {
         assertThat(all).hasSize(2);
     }
 
+    @Test
+    void 특정_회원의_전체_예약을_조회한다() {
+        //given
+        Member member1 = savedMember("name",MemberRole.NORMAL);
+        Member member2 = savedMember("other",MemberRole.NORMAL);
+
+        Member savedMember1 = memberRepository.save(member1);
+        Member savedMember2 = memberRepository.save(member2);
+
+
+        reservationRepository.save(unSavedReservation(TOMORROW, savedMember1));
+        reservationRepository.save(unSavedReservation(TOMORROW.plusDays(1), savedMember1));
+        reservationRepository.save(unSavedReservation(TOMORROW.plusDays(2), savedMember1));
+
+        reservationRepository.save(unSavedReservation(TOMORROW.plusDays(3), savedMember2));
+        reservationRepository.save(unSavedReservation(TOMORROW.plusDays(4), savedMember2));
+
+        //when
+        List<Reservation> all = reservationRepository.findAllByMemberId(savedMember1.getId());
+
+        //then
+        assertThat(all).hasSize(3);
+    }
+
     private Reservation unSavedReservation(LocalDate date, Member member) {
         return new Reservation(member, date, TIME, THEME);
     }
 
-    private Member savedMember(MemberRole role) {
-        return new Member(1L, "name", "password", role);
+    private Member savedMember(String name, MemberRole role) {
+        return new Member(1L, name, "password", role);
     }
 }
