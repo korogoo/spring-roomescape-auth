@@ -30,6 +30,7 @@ import roomescape.domain.AuthConstants;
 import roomescape.domain.Member;
 import roomescape.domain.MemberRole;
 import roomescape.domain.Reservation;
+import roomescape.domain.Store;
 import roomescape.dto.member.MemberSummary;
 import roomescape.dto.reservation.ReservationCreateRequest;
 import roomescape.exception.ErrorCode;
@@ -58,7 +59,7 @@ class ReservationControllerTest {
     @Test
     void 비로그인_사용자는_예약을_생성할_수_없다() throws Exception {
         // given
-        ReservationCreateRequest request = new ReservationCreateRequest(TOMORROW, TIME, THEME);
+        ReservationCreateRequest request = new ReservationCreateRequest(TOMORROW, TIME, THEME, savedStore().getId());
 
         // when
         ResultActions result = mockMvc
@@ -78,7 +79,7 @@ class ReservationControllerTest {
     @EnumSource(MemberRole.class)
     void 모든_사용자는_예약을_생성할_수_있다(MemberRole role) throws Exception {
         // given
-        ReservationCreateRequest request = new ReservationCreateRequest(TOMORROW, TIME, THEME);
+        ReservationCreateRequest request = new ReservationCreateRequest(TOMORROW, TIME, THEME, savedStore().getId());
         Reservation savedReservation = savedReservation();
         Member member = savedMember(role);
 
@@ -133,7 +134,11 @@ class ReservationControllerTest {
     }
 
     private Reservation savedReservation() {
-        return new Reservation(1L, savedMember(MemberRole.NORMAL), TOMORROW, TIME, THEME);
+        return new Reservation(1L, savedMember(MemberRole.NORMAL), savedStore(), TOMORROW, TIME, THEME);
+    }
+
+    private Store savedStore() {
+        return new Store(1L, "store", savedMember(MemberRole.ADMIN));
     }
 
     private Member savedMember(MemberRole role) {

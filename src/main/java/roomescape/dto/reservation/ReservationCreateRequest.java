@@ -16,6 +16,9 @@ public record ReservationCreateRequest(
     LocalTime time,
 
     @NotBlank(message = "테마는 필수 입력값입니다.")
-    String theme
+    String theme,
+
+    @NotNull(message = "매장 아이디는 필수 입력값입니다.")
+    Long storeId
 ) {
 }

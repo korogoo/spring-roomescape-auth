@@ -25,6 +25,7 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import roomescape.domain.Member;
 import roomescape.domain.MemberRole;
 import roomescape.domain.Reservation;
+import roomescape.domain.Store;
 import roomescape.filter.AuthFilter;
 import roomescape.service.ReservationService;
 
@@ -64,7 +65,7 @@ class AdminControllerWithFilterTest {
     @Test
     void 일반_사용자는_접근할_수_없다() throws Exception {
         // given
-        Member member = savedMember(MemberRole.NORMAL);
+        Member member = savedNormalMember();
 
         //when
         ResultActions result = mockMvc
@@ -84,7 +85,7 @@ class AdminControllerWithFilterTest {
             .thenReturn(List.of(
                 reservation.withId(1L), reservation.withId(2L), reservation.withId(3L)));
 
-        Member member = savedMember(MemberRole.ADMIN);
+        Member member = savedManager();
 
         //when
         ResultActions result = mockMvc
@@ -104,10 +105,18 @@ class AdminControllerWithFilterTest {
     }
 
     private Reservation savedReservation() {
-        return new Reservation(1L, savedMember(MemberRole.NORMAL), TOMORROW, TIME, THEME);
+        return new Reservation(1L, savedNormalMember(), savedStore(), TOMORROW, TIME, THEME);
     }
 
-    private Member savedMember(MemberRole role) {
-        return new Member(1L, "name", "password", role);
+    private Member savedNormalMember() {
+        return new Member(1L, "name", "password", MemberRole.NORMAL);
+    }
+
+    private Store savedStore() {
+        return new Store(1L, "store", savedManager());
+    }
+
+    private Member savedManager() {
+        return new Member(2L, "manager", "password", MemberRole.ADMIN);
     }
 }

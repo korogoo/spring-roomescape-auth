@@ -8,20 +8,28 @@ public class Reservation {
 
     private final Long id;
     private final Member member;
+    private final Store store;
     private final LocalDate date;
     private final LocalTime time;
     private final String theme;
 
-    public Reservation(Long id, Member member, LocalDate date, LocalTime time, String theme) {
+    public Reservation(Long id, Member member, Store store, LocalDate date, LocalTime time, String theme) {
         this.id = id;
         this.member = member;
+        this.store = store;
         this.date = date;
         this.time = time;
         this.theme = theme;
     }
 
-    public Reservation(long memberId, LocalDate date, LocalTime time, String theme) {
-        this(null, new Member(memberId, null, null, null), date, time, theme);
+    public Reservation(long memberId, long storeId, LocalDate date, LocalTime time, String theme) {
+        this(
+            null,
+            new Member(memberId, null, null, null),
+            new Store(storeId, null, null),
+            date,
+            time,
+            theme);
     }
 
     public Long getId() {
@@ -48,8 +56,12 @@ public class Reservation {
         return theme;
     }
 
+    public long getStoreId() {
+        return store.getId();
+    }
+
     public Reservation withId(long id) {
-        return new Reservation(id, member, date, time, theme);
+        return new Reservation(id, member, store, date, time, theme);
     }
 
     @Override

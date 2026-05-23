@@ -12,6 +12,7 @@ import org.springframework.stereotype.Repository;
 import roomescape.domain.Member;
 import roomescape.domain.MemberRole;
 import roomescape.domain.Reservation;
+import roomescape.domain.Store;
 
 @Repository
 public class JdbcReservationRepository implements ReservationRepository {
@@ -24,6 +25,16 @@ public class JdbcReservationRepository implements ReservationRepository {
                 rs.getString("username"),
                 rs.getString("password"),
                 MemberRole.valueOf(rs.getString("member_role"))
+            ),
+            new Store(
+                rs.getLong("st_id"),
+                rs.getString("st_name"),
+                new Member(
+                    rs.getLong("sm_id"),
+                    rs.getString("sm_username"),
+                    rs.getString("sm_password"),
+                    MemberRole.valueOf(rs.getString("sm_member_role"))
+                )
             ),
             rs.getDate("res_date").toLocalDate(),
             rs.getTime("res_time").toLocalTime(),
@@ -40,9 +51,13 @@ public class JdbcReservationRepository implements ReservationRepository {
     public List<Reservation> findAll() {
         return jdbcTemplate.query("""
                 SELECT r.id, r.res_date, r.res_time, r.theme,
-                       m.id as m_id, m.username, m.password, m.member_role
+                       m.id as m_id, m.username, m.password, m.member_role,
+                       st.id as st_id, st.st_name as st_name,
+                       sm.id as sm_id, sm.username as sm_username, sm.password as sm_password, sm.member_role as sm_member_role
                 FROM reservation r
-                JOIN member m ON r.member_id = m.id  
+                JOIN member m ON r.member_id = m.id
+                JOIN store st ON r.store_id = st.id
+                JOIN member sm ON st.member_id = sm.id
                 """,
             RESERVATION_ROW_MAPPER);
     }
@@ -50,8 +65,8 @@ public class JdbcReservationRepository implements ReservationRepository {
     @Override
     public Reservation save(Reservation reservation) {
         final String sql = """
-            INSERT INTO reservation(res_date, res_time, theme, member_id)
-            VALUES (?, ?, ?, ?)
+            INSERT INTO reservation(res_date, res_time, theme, member_id, store_id)
+            VALUES (?, ?, ?, ?, ?)
             """;
 
         KeyHolder keyHolder = new GeneratedKeyHolder();
@@ -61,6 +76,7 @@ public class JdbcReservationRepository implements ReservationRepository {
             ps.setTime(2, Time.valueOf(reservation.getTime()));
             ps.setString(3, reservation.getTheme());
             ps.setLong(4, reservation.getMemberId());
+            ps.setLong(5, reservation.getStoreId());
             return ps;
         }, keyHolder);
 
@@ -75,10 +91,14 @@ public class JdbcReservationRepository implements ReservationRepository {
     public List<Reservation> findAllByMemberId(Long memberId) {
         return jdbcTemplate.query("""
                 SELECT r.id, r.res_date, r.res_time, r.theme,
-                           m.id as m_id, m.username, m.password, m.member_role
+                       m.id as m_id, m.username, m.password, m.member_role,
+                       st.id as st_id, st.st_name as st_name,
+                       sm.id as sm_id, sm.username as sm_username, sm.password as sm_password, sm.member_role as sm_member_role
                 FROM reservation r
                 JOIN member m ON r.member_id = m.id
-                WHERE m.id = ?
+                JOIN store st ON r.store_id = st.id
+                JOIN member sm ON st.member_id = sm.id
+                WHERE r.member_id = ?
                 """,
             RESERVATION_ROW_MAPPER,
             memberId);

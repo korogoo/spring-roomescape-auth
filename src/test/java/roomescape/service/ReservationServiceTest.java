@@ -18,6 +18,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import roomescape.domain.Member;
 import roomescape.domain.MemberRole;
 import roomescape.domain.Reservation;
+import roomescape.domain.Store;
 import roomescape.dto.reservation.ReservationCreateRequest;
 import roomescape.repository.reservation.ReservationRepository;
 
@@ -39,7 +40,7 @@ class ReservationServiceTest {
     void 예약을_저장할_수_있다(MemberRole role) {
         //given
         Member member = savedMember(role);
-        ReservationCreateRequest request = new ReservationCreateRequest(TOMORROW, TIME, THEME);
+        ReservationCreateRequest request = new ReservationCreateRequest(TOMORROW, TIME, THEME, savedStore().getId());
 
         when(reservationRepository.save(any()))
             .thenReturn(savedReservation());
@@ -80,7 +81,11 @@ class ReservationServiceTest {
     }
 
     private Reservation savedReservation() {
-        return new Reservation(1L, savedMember(MemberRole.NORMAL), TOMORROW, TIME, "theme");
+        return new Reservation(1L, savedMember(MemberRole.NORMAL), savedStore(), TOMORROW, TIME, "theme");
+    }
+
+    private Store savedStore() {
+        return new Store(1L, "store", savedMember(MemberRole.ADMIN));
     }
 
     private Member savedMember(MemberRole role) {

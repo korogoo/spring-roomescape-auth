@@ -12,10 +12,13 @@ import org.springframework.context.annotation.Import;
 import roomescape.domain.Member;
 import roomescape.domain.MemberRole;
 import roomescape.domain.Reservation;
+import roomescape.domain.Store;
 import roomescape.repository.member.JdbcMemberRepository;
 import roomescape.repository.member.MemberRepository;
+import roomescape.repository.store.JdbcStoreRepository;
+import roomescape.repository.store.StoreRepository;
 
-@Import({JdbcReservationRepository.class, JdbcMemberRepository.class})
+@Import({JdbcReservationRepository.class, JdbcMemberRepository.class, JdbcStoreRepository.class})
 @JdbcTest
 class JdbcReservationRepositoryTest {
 
@@ -25,21 +28,28 @@ class JdbcReservationRepositoryTest {
 
     private final ReservationRepository reservationRepository;
     private final MemberRepository memberRepository;
+    private final StoreRepository storeRepository;
 
     @Autowired
-    public JdbcReservationRepositoryTest(ReservationRepository reservationRepository,
-                                         MemberRepository memberRepository) {
+    public JdbcReservationRepositoryTest(
+        ReservationRepository reservationRepository,
+        MemberRepository memberRepository,
+        StoreRepository storeRepository
+    ) {
         this.reservationRepository = reservationRepository;
         this.memberRepository = memberRepository;
+        this.storeRepository = storeRepository;
     }
 
     @Test
     void 예약을_저장한다() {
         //given
-        Member member = savedMember("name", MemberRole.NORMAL);
-        Member savedMember = memberRepository.save(member);
+        Member savedMember = memberRepository.save(unsavedMember("name", MemberRole.NORMAL));
 
-        Reservation target = unSavedReservation(TOMORROW, savedMember);
+        Member savedManager = memberRepository.save(unsavedMember("manager", MemberRole.ADMIN));
+        Store savedStore = storeRepository.save(unsavedStore("store", savedManager));
+
+        Reservation target = unSavedReservation(TOMORROW, savedMember, savedStore);
 
         //when
         Reservation saved = reservationRepository.save(target);
@@ -54,50 +64,43 @@ class JdbcReservationRepositoryTest {
     }
 
     @Test
-    void 전체_예약을_조회한다() {
-        //given
-        Member member = savedMember("name",MemberRole.NORMAL);
-        Member savedMember = memberRepository.save(member);
-
-        reservationRepository.save(unSavedReservation(TOMORROW, savedMember));
-        reservationRepository.save(unSavedReservation(TOMORROW.plusDays(1), savedMember));
-
-        //when
-        List<Reservation> all = reservationRepository.findAll();
-
-        //then
-        assertThat(all).hasSize(2);
-    }
-
-    @Test
     void 특정_회원의_전체_예약을_조회한다() {
         //given
-        Member member1 = savedMember("name",MemberRole.NORMAL);
-        Member member2 = savedMember("other",MemberRole.NORMAL);
+        Member member1 = memberRepository.save(unsavedMember("name1", MemberRole.NORMAL));
+        Member member2 = memberRepository.save(unsavedMember("name2", MemberRole.NORMAL));
 
-        Member savedMember1 = memberRepository.save(member1);
-        Member savedMember2 = memberRepository.save(member2);
+        Member manager = memberRepository.save(unsavedMember("name", MemberRole.ADMIN));
+        Store store = storeRepository.save(unsavedStore("store", manager));
 
+        reservationRepository.save(unSavedReservation(TOMORROW, member1, store));
+        reservationRepository.save(unSavedReservation(TOMORROW.plusDays(1), member1, store));
+        reservationRepository.save(unSavedReservation(TOMORROW.plusDays(2), member1, store));
 
-        reservationRepository.save(unSavedReservation(TOMORROW, savedMember1));
-        reservationRepository.save(unSavedReservation(TOMORROW.plusDays(1), savedMember1));
-        reservationRepository.save(unSavedReservation(TOMORROW.plusDays(2), savedMember1));
-
-        reservationRepository.save(unSavedReservation(TOMORROW.plusDays(3), savedMember2));
-        reservationRepository.save(unSavedReservation(TOMORROW.plusDays(4), savedMember2));
+        reservationRepository.save(unSavedReservation(TOMORROW.plusDays(3), member2, store));
+        reservationRepository.save(unSavedReservation(TOMORROW.plusDays(4), member2, store));
 
         //when
-        List<Reservation> all = reservationRepository.findAllByMemberId(savedMember1.getId());
+        List<Reservation> all = reservationRepository.findAllByMemberId(member1.getId());
 
         //then
         assertThat(all).hasSize(3);
+        assertThat(all).extracting(Reservation::getMemberId)
+            .containsOnly(member1.getId());
     }
 
-    private Reservation unSavedReservation(LocalDate date, Member member) {
-        return new Reservation(member.getId(), date, TIME, THEME);
+    private Reservation unSavedReservation(LocalDate date, Member member, Store store) {
+        return new Reservation(member.getId(), store.getId(), date, TIME, THEME);
     }
 
     private Member savedMember(String name, MemberRole role) {
         return new Member(1L, name, "password", role);
+    }
+
+    private Member unsavedMember(String name, MemberRole role) {
+        return new Member(name, "password", role);
+    }
+
+    private Store unsavedStore(String storeName, Member savedMember) {
+        return new Store(storeName, savedMember);
     }
 }

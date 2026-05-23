@@ -27,6 +27,7 @@ import roomescape.domain.AuthConstants;
 import roomescape.domain.Member;
 import roomescape.domain.MemberRole;
 import roomescape.domain.Reservation;
+import roomescape.domain.Store;
 import roomescape.dto.member.MemberSummary;
 import roomescape.interceptor.JwtAuthInterceptor;
 import roomescape.service.ReservationService;
@@ -111,7 +112,11 @@ class AdminControllerWithJwtInterceptorTest {
     }
 
     private Reservation savedReservation() {
-        return new Reservation(1L, savedMember(MemberRole.NORMAL), TOMORROW, TIME, THEME);
+        return new Reservation(1L, savedMember(MemberRole.NORMAL), savedStore(), TOMORROW, TIME, THEME);
+    }
+
+    private Store savedStore() {
+        return new Store("store", savedMember(MemberRole.ADMIN));
     }
 
     private Member savedMember(MemberRole role) {

@@ -30,6 +30,7 @@ import roomescape.domain.AuthConstants;
 import roomescape.domain.Member;
 import roomescape.domain.MemberRole;
 import roomescape.domain.Reservation;
+import roomescape.domain.Store;
 import roomescape.domain.Token;
 import roomescape.interceptor.AuthInterceptor;
 import roomescape.repository.token.TokenRepository;
@@ -74,7 +75,7 @@ class AdminControllerWithInterceptorTest {
     @Test
     void 일반_사용자는_접근할_수_없다() throws Exception {
         // given
-        Member member = savedMember(MemberRole.NORMAL);
+        Member member = savedNormalMember();
         when(tokenRepository.findByTokenValue("test-token"))
             .thenReturn(Optional.of(savedToken(member)));
 
@@ -91,7 +92,7 @@ class AdminControllerWithInterceptorTest {
     void 관리자는_전체_예약을_조회할_수_있다() throws Exception {
         // given
         Reservation reservation = savedReservation();
-        Member member = savedMember(MemberRole.ADMIN);
+        Member member = savedNormalMember();
 
         when(tokenRepository.findByTokenValue("test-token"))
             .thenReturn(Optional.of(savedToken(member)));
@@ -121,10 +122,18 @@ class AdminControllerWithInterceptorTest {
     }
 
     private Reservation savedReservation() {
-        return new Reservation(1L, savedMember(MemberRole.NORMAL), TOMORROW, TIME, THEME);
+        return new Reservation(1L, savedNormalMember(), savedStore(), TOMORROW, TIME, THEME);
     }
 
-    private Member savedMember(MemberRole role) {
-        return new Member(1L, "name", "password", role);
+    private Store savedStore() {
+        return new Store("store", savedManager());
+    }
+
+    private Member savedNormalMember() {
+        return new Member(1L, "name", "password", MemberRole.NORMAL);
+    }
+
+    private Member savedManager() {
+        return new Member(2L, "manager", "password", MemberRole.ADMIN);
     }
 }

@@ -22,7 +22,7 @@ public class ReservationService {
 
     public Reservation save(ReservationCreateRequest request, long memberId) {
         Reservation reservation = new Reservation(
-            memberId, request.date(), request.time(), request.theme());
+            memberId, request.storeId(), request.date(), request.time(), request.theme());
         return reservationRepository.save(reservation);
     }
 
