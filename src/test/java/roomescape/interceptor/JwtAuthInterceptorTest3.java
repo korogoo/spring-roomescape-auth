@@ -80,13 +80,13 @@ class JwtAuthInterceptorTest3 {
     }
 
     @Test
-    void 일반_사용자가_admin_경로에_접근하면_403을_반환한다() throws Exception {
+    void 일반_사용자가_admin_경로에_접근하면_404을_반환한다() throws Exception {
         when(jwtProvider.extract("normal-token"))
             .thenReturn(new MemberSummary(1L, MemberRole.NORMAL));
 
         mockMvc.perform(get("/admin/reservations")
                 .header(AUTH_HEADER, "Bearer normal-token"))
-            .andExpect(status().isForbidden());
+            .andExpect(status().isNotFound());
     }
 
     @Test

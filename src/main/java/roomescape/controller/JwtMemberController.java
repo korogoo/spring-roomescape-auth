@@ -2,33 +2,30 @@ package roomescape.controller;
 
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
-import java.time.LocalDateTime;
-import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import roomescape.auth.JwtProvider;
 import roomescape.domain.AuthConstants;
 import roomescape.domain.Member;
 import roomescape.domain.MemberRole;
-import roomescape.domain.Token;
 import roomescape.dto.ResourceIdResponse;
 import roomescape.dto.member.MemberLoginRequest;
-import roomescape.repository.token.TokenRepository;
 import roomescape.service.MemberService;
 
 @RestController
-@RequestMapping("/session/members")
-public class MemberController {
+@RequestMapping("/members")
+public class JwtMemberController {
 
     private final MemberService memberService;
-    private final TokenRepository tokenRepository;
+    private final JwtProvider jwtProvider;
 
-    public MemberController(MemberService memberService, TokenRepository tokenRepository) {
+    public JwtMemberController(MemberService memberService, JwtProvider jwtProvider) {
         this.memberService = memberService;
-        this.tokenRepository = tokenRepository;
+        this.jwtProvider = jwtProvider;
     }
 
     @PostMapping("/admin/join")
@@ -57,11 +54,7 @@ public class MemberController {
     ) {
         Member member = memberService.login(request);
 
-        String uuid = UUID.randomUUID().toString();
-        LocalDateTime expiredAt = LocalDateTime.now().plusDays(10);
-        Token token = new Token(uuid, expiredAt, member.getId(), member.getRole());
-        tokenRepository.save(token);
-
-        httpResponse.setHeader(AuthConstants.SESSION_HEADER_KEY, uuid);
+        String token = jwtProvider.generate(member.getId(), member.getRole());
+        httpResponse.setHeader(AuthConstants.JWT_HEADER_KEY, token);
     }
 }

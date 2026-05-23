@@ -36,6 +36,7 @@ import roomescape.service.MemberService;
 @WebMvcTest(MemberController.class)
 class MemberControllerTest {
 
+    private static final String COMMON_URI = "/session/members";
     @Autowired
     private MockMvc mockMvc;
     @Autowired
@@ -55,7 +56,7 @@ class MemberControllerTest {
             .thenReturn(member);
 
         ResultActions result = mockMvc
-            .perform(post("/members/login")
+            .perform(post(COMMON_URI + "/login")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)));
 
@@ -77,7 +78,7 @@ class MemberControllerTest {
 
         //when
         ResultActions result = mockMvc
-            .perform(post("/members/login")
+            .perform(post(COMMON_URI + "/login")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)));
 
@@ -102,7 +103,7 @@ class MemberControllerTest {
 
         //when
         ResultActions result = mockMvc
-            .perform(post("/members/admin/join")
+            .perform(post(COMMON_URI + "/admin/join")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)));
 
@@ -126,7 +127,7 @@ class MemberControllerTest {
 
         //when
         ResultActions result = mockMvc
-            .perform(post("/members/normal/join")
+            .perform(post(COMMON_URI + "/normal/join")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)));
 
@@ -151,7 +152,7 @@ class MemberControllerTest {
 
         //when
         ResultActions result = mockMvc
-            .perform(post("/members/normal/join")
+            .perform(post(COMMON_URI + "/normal/join")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)));
 
@@ -179,7 +180,7 @@ class MemberControllerTest {
 
             //when
             ResultActions result = mockMvc
-                .perform(post("/members/login")
+                .perform(post(COMMON_URI + "/login")
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(objectMapper.writeValueAsString(request)));
 
@@ -202,7 +203,7 @@ class MemberControllerTest {
 
             //when
             ResultActions result = mockMvc
-                .perform(post("/members/login")
+                .perform(post(COMMON_URI + "/login")
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(objectMapper.writeValueAsString(request)));
 
@@ -226,7 +227,7 @@ class MemberControllerTest {
 
             //when
             ResultActions result = mockMvc
-                .perform(post("/members/login")
+                .perform(post(COMMON_URI + "/login")
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(objectMapper.writeValueAsString(request)));
 

@@ -25,9 +25,9 @@ public class WebConfig implements WebMvcConfigurer {
         registry.addInterceptor(new AuthInterceptor(tokenRepository))
             .addPathPatterns("/**")
             .excludePathPatterns(List.of(
-                "/members/login",
-                "/members/normal/join",
-                "/members/admin/join"
+                "/session/members/login",
+                "/session/members/normal/join",
+                "/session/members/admin/join"
             ));
     }
 
