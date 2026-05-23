@@ -2,6 +2,7 @@ package roomescape.controller;
 
 import static org.hamcrest.Matchers.hasSize;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -30,6 +31,7 @@ import roomescape.domain.Reservation;
 import roomescape.domain.Store;
 import roomescape.dto.member.MemberSummary;
 import roomescape.interceptor.JwtAuthInterceptor;
+import roomescape.interceptor.LoginMemberArgumentResolver;
 import roomescape.service.ReservationService;
 
 @ExtendWith(MockitoExtension.class)
@@ -55,6 +57,7 @@ class AdminControllerWithJwtInterceptorTest {
         mockMvc = MockMvcBuilders
             .standaloneSetup(adminController)
             .addInterceptors(new JwtAuthInterceptor(jwtProvider))
+            .setCustomArgumentResolvers(new LoginMemberArgumentResolver())
             .setControllerAdvice(new GlobalExceptionHandler())
             .build();
     }
@@ -84,13 +87,14 @@ class AdminControllerWithJwtInterceptorTest {
     }
 
     @Test
-    void 관리자는_전체_예약을_조회할_수_있다() throws Exception {
+    void 관리자가_관리하는_매장의_전체_예약을_조회할_수_있다() throws Exception {
         // given
-        Reservation reservation = savedReservation();
+        Member manager = savedMember(MemberRole.ADMIN);
+        Reservation reservation = savedReservation(manager);
 
         when(jwtProvider.extract(any()))
-            .thenReturn(new MemberSummary(1L, MemberRole.ADMIN));
-        when(reservationService.findAll())
+            .thenReturn(new MemberSummary(manager.getId(), manager.getRole()));
+        when(reservationService.findAllByManagerId(anyLong()))
             .thenReturn(List.of(
                 reservation.withId(1L), reservation.withId(2L), reservation.withId(3L)));
 
@@ -107,7 +111,7 @@ class AdminControllerWithJwtInterceptorTest {
             .andExpect(jsonPath("$[1].id").value(2L))
             .andExpect(jsonPath("$[2].id").value(3L));
 
-        verify(reservationService, times(1)).findAll();
+        verify(reservationService, times(1)).findAllByManagerId(manager.getId());
         verifyNoMoreInteractions(reservationService);
     }
 
@@ -115,11 +119,19 @@ class AdminControllerWithJwtInterceptorTest {
         return new Reservation(1L, savedMember(MemberRole.NORMAL), savedStore(), TOMORROW, TIME, THEME);
     }
 
+    private Reservation savedReservation(Member manager) {
+        return new Reservation(1L, savedMember(MemberRole.NORMAL), savedStore(manager), TOMORROW, TIME, THEME);
+    }
+
+    private Store savedStore(Member manager) {
+        return new Store(2L, "store", manager);
+    }
+
     private Store savedStore() {
-        return new Store("store", savedMember(MemberRole.ADMIN));
+        return new Store(4L, "store", savedMember(MemberRole.ADMIN));
     }
 
     private Member savedMember(MemberRole role) {
-        return new Member(1L, "name", "password", role);
+        return new Member(3L, "name", "password", role);
     }
 }

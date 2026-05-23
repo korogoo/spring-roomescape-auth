@@ -26,6 +26,10 @@ public class ReservationService {
         return reservationRepository.save(reservation);
     }
 
+    public List<Reservation> findAllByManagerId(long memberId) {
+        return reservationRepository.findAllByStoreMemberId(memberId);
+    }
+
     public List<Reservation> findAllByMemberId(long memberId) {
         return reservationRepository.findAllByMemberId(memberId);
     }

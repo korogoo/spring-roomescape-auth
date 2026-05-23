@@ -6,6 +6,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import roomescape.annotation.LoginMember;
+import roomescape.dto.member.MemberSummary;
 import roomescape.dto.reservation.ReservationResponse;
 import roomescape.service.ReservationService;
 
@@ -21,8 +23,10 @@ public class AdminController {
 
     @GetMapping("/reservations")
     @ResponseStatus(HttpStatus.OK)
-    public List<ReservationResponse> findAllReservations() {
-        return reservationService.findAll().stream()
+    public List<ReservationResponse> findAllReservations(
+        @LoginMember MemberSummary member
+    ) {
+        return reservationService.findAllByManagerId(member.id()).stream()
             .map(ReservationResponse::from)
             .toList();
     }

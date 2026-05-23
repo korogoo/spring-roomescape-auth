@@ -67,7 +67,7 @@ class ReservationServiceTest {
     }
 
     @Test
-    void 본인의_모든_예약을_조회할_수_있다() {
+    void 사용자의_모든_예약을_조회할_수_있다() {
         //given
         when(reservationRepository.findAllByMemberId(anyLong()))
             .thenReturn(List.of(
@@ -80,15 +80,37 @@ class ReservationServiceTest {
         assertThat(all).hasSize(3);
     }
 
+    @Test
+    void 메니저의_모든_예약을_조회할_수_있다() {
+        //given
+        when(reservationRepository.findAllByStoreMemberId(anyLong()))
+            .thenReturn(List.of(
+                savedReservation().withId(1L), savedReservation().withId(2L), savedReservation().withId(3L)));
+
+        Member manager = savedManager();
+
+        //when
+        List<Reservation> all = reservationService.findAllByManagerId(manager.getId());
+
+        //then
+        assertThat(all).hasSize(3);
+        assertThat(all).extracting(Reservation::getManagerId)
+            .containsOnly(manager.getId());
+    }
+
     private Reservation savedReservation() {
         return new Reservation(1L, savedMember(MemberRole.NORMAL), savedStore(), TOMORROW, TIME, "theme");
     }
 
     private Store savedStore() {
-        return new Store(1L, "store", savedMember(MemberRole.ADMIN));
+        return new Store(1L, "store", savedManager());
     }
 
     private Member savedMember(MemberRole role) {
         return new Member(1L, "name", "password", role);
+    }
+
+    private Member savedManager() {
+        return new Member(2L, "manager", "password", MemberRole.ADMIN);
     }
 }

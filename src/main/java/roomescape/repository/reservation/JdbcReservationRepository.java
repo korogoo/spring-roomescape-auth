@@ -103,4 +103,21 @@ public class JdbcReservationRepository implements ReservationRepository {
             RESERVATION_ROW_MAPPER,
             memberId);
     }
+
+    @Override
+    public List<Reservation> findAllByStoreMemberId(long managerId) {
+        return jdbcTemplate.query("""
+                SELECT r.id, r.res_date, r.res_time, r.theme,
+                       m.id as m_id, m.username, m.password, m.member_role,
+                       st.id as st_id, st.st_name as st_name,
+                       sm.id as sm_id, sm.username as sm_username, sm.password as sm_password, sm.member_role as sm_member_role
+                FROM reservation r
+                JOIN member m ON r.member_id = m.id
+                JOIN store st ON r.store_id = st.id
+                JOIN member sm ON st.member_id = sm.id
+                WHERE st.member_id = ?
+                """,
+            RESERVATION_ROW_MAPPER,
+            managerId);
+    }
 }

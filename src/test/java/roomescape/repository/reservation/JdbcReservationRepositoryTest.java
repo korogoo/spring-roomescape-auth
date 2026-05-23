@@ -88,12 +88,34 @@ class JdbcReservationRepositoryTest {
             .containsOnly(member1.getId());
     }
 
-    private Reservation unSavedReservation(LocalDate date, Member member, Store store) {
-        return new Reservation(member.getId(), store.getId(), date, TIME, THEME);
+    @Test
+    void 특정_메니저의_전체_예약을_조회한다() {
+        //given
+        Member member = memberRepository.save(unsavedMember("name1", MemberRole.NORMAL));
+
+        Member manager1 = memberRepository.save(unsavedMember("manager1", MemberRole.ADMIN));
+        Member manager2 = memberRepository.save(unsavedMember("manager2", MemberRole.ADMIN));
+        Store store1 = storeRepository.save(unsavedStore("store1", manager1));
+        Store store2 = storeRepository.save(unsavedStore("store2", manager2));
+
+        reservationRepository.save(unSavedReservation(TOMORROW, member, store1));
+        reservationRepository.save(unSavedReservation(TOMORROW.plusDays(1), member, store1));
+        reservationRepository.save(unSavedReservation(TOMORROW.plusDays(2), member, store1));
+
+        reservationRepository.save(unSavedReservation(TOMORROW.plusDays(3), member, store2));
+        reservationRepository.save(unSavedReservation(TOMORROW.plusDays(4), member, store2));
+
+        //when
+        List<Reservation> all = reservationRepository.findAllByStoreMemberId(manager1.getId());
+
+        //then
+        assertThat(all).hasSize(3);
+        assertThat(all).extracting(Reservation::getManagerId)
+            .containsOnly(manager1.getId());
     }
 
-    private Member savedMember(String name, MemberRole role) {
-        return new Member(1L, name, "password", role);
+    private Reservation unSavedReservation(LocalDate date, Member member, Store store) {
+        return new Reservation(member.getId(), store.getId(), date, TIME, THEME);
     }
 
     private Member unsavedMember(String name, MemberRole role) {

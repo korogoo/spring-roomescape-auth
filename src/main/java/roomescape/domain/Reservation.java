@@ -60,6 +60,10 @@ public class Reservation {
         return store.getId();
     }
 
+    public long getManagerId() {
+        return store.getMemberId();
+    }
+
     public Reservation withId(long id) {
         return new Reservation(id, member, store, date, time, theme);
     }
