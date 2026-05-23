@@ -12,4 +12,8 @@ public interface ReservationRepository {
     List<Reservation> findAllByMemberId(Long memberId);
 
     List<Reservation> findAllByStoreMemberId(long managerId);
+
+    boolean existsByIdAndStoreMemberId(long reservationId, long managerId);
+
+    void deleteByIdAndStoreMemberId(long reservationId, long managerId);
 }

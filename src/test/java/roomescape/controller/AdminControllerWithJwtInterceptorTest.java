@@ -7,6 +7,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -112,6 +113,26 @@ class AdminControllerWithJwtInterceptorTest {
             .andExpect(jsonPath("$[2].id").value(3L));
 
         verify(reservationService, times(1)).findAllByManagerId(manager.getId());
+        verifyNoMoreInteractions(reservationService);
+    }
+
+    @Test
+    void 관리자가_관리하는_매장의_예약을_삭제할_수_있다() throws Exception {
+        // given
+        MemberSummary member = new MemberSummary(2L, MemberRole.ADMIN);
+        when(jwtProvider.extract(any()))
+            .thenReturn(member);
+
+        //when
+        long reservationId = 3L;
+        ResultActions result = mockMvc
+            .perform(delete("/admin/reservations/{id}", reservationId)
+                .header(JWT_HEADER_KEY, JWT_HEADER_VALUE));
+
+        //then
+        result.andExpect(status().isNoContent());
+
+        verify(reservationService, times(1)).delete(reservationId, member.id());
         verifyNoMoreInteractions(reservationService);
     }
 

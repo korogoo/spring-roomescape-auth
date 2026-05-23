@@ -10,6 +10,7 @@ public enum ErrorCode {
     FORBIDDEN(HttpStatus.FORBIDDEN, "접근 권한이 없습니다"),
     NOT_FOUND(HttpStatus.NOT_FOUND, "존재하지 않는 리소스입니다"),
     MEMBER_NOT_FOUND(HttpStatus.NOT_FOUND, "존재하지 않는 사용자입니다"),
+    RESERVATION_NOT_FOUND(HttpStatus.NOT_FOUND, "존재하지 않는 예약입니다"),
     UNAUTHORIZED_MEMBER(HttpStatus.UNAUTHORIZED, "인증되지 않은 사용자입니다"),
     INVALID_USERNAME_AND_PASSWORD(HttpStatus.BAD_REQUEST, "아이디 또는 비밀번호가 올바르지 않습니다"),
     DUPLICATED_USERNAME(HttpStatus.CONFLICT, "이미 존재하는 아이디입니다"),

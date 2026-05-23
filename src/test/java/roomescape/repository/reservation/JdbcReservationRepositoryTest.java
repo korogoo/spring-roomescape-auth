@@ -5,6 +5,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.JdbcTest;
@@ -112,6 +114,73 @@ class JdbcReservationRepositoryTest {
         assertThat(all).hasSize(3);
         assertThat(all).extracting(Reservation::getManagerId)
             .containsOnly(manager1.getId());
+    }
+
+    @Nested
+    @DisplayName("특정 예약 아이디와 매니저 아이디로 예약이 존재하는지 조회한다")
+    class ExistsByIdAndManagerId {
+
+        @Test
+        void 특정_매장의_매니저가_생성한_예약이_있다면_TRUE를_반환한다() {
+            //given
+            Member member = memberRepository.save(unsavedMember("name", MemberRole.NORMAL));
+
+            Member manager = memberRepository.save(unsavedMember("manager", MemberRole.ADMIN));
+            Store store = storeRepository.save(unsavedStore("store", manager));
+
+            Reservation reservation = reservationRepository.save(unSavedReservation(TOMORROW, member, store));
+
+            //when
+            boolean exists = reservationRepository.existsByIdAndStoreMemberId(reservation.getId(), manager.getId());
+
+            //then
+            assertThat(exists).isTrue();
+        }
+
+        @Test
+        void 특정_매장의_매니저가_생성한_예약이_없다면_FALSE를_반환한다() {
+            //when
+            boolean exists = reservationRepository.existsByIdAndStoreMemberId(1L, 1L);
+
+            //then
+            assertThat(exists).isFalse();
+        }
+
+        @Test
+        void 다른_매니저의_매장_예약이라면_FALSE를_반환한다() {
+            // given
+            Member member = memberRepository.save(unsavedMember("name", MemberRole.NORMAL));
+
+            Member manager = memberRepository.save(unsavedMember("manager", MemberRole.ADMIN));
+            Member anotherManager = memberRepository.save(unsavedMember("another", MemberRole.ADMIN));
+
+            Store store = storeRepository.save(unsavedStore("store", manager));
+            Reservation reservation = reservationRepository.save(unSavedReservation(TOMORROW, member, store));
+
+            // when
+            boolean exists = reservationRepository.existsByIdAndStoreMemberId(reservation.getId(), anotherManager.getId());
+
+            // then
+            assertThat(exists).isFalse();
+        }
+    }
+
+    @Test
+    void 특정_예약_아이디와_매니저_아이디로_예약을_삭제한다() {
+        // given
+        Member member = memberRepository.save(unsavedMember("name", MemberRole.NORMAL));
+
+        Member manager = memberRepository.save(unsavedMember("manager", MemberRole.ADMIN));
+
+        Store store = storeRepository.save(unsavedStore("store", manager));
+        Reservation reservation = reservationRepository.save(unSavedReservation(TOMORROW, member, store));
+
+        //when
+        reservationRepository.deleteByIdAndStoreMemberId(reservation.getId(), manager.getId());
+
+        //then
+        boolean exists = reservationRepository.existsByIdAndStoreMemberId(reservation.getId(), manager.getId());
+        assertThat(exists).isFalse();
     }
 
     private Reservation unSavedReservation(LocalDate date, Member member, Store store) {

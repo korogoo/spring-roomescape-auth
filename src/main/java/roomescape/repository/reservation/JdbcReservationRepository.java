@@ -120,4 +120,26 @@ public class JdbcReservationRepository implements ReservationRepository {
             RESERVATION_ROW_MAPPER,
             managerId);
     }
+
+    @Override
+    public boolean existsByIdAndStoreMemberId(long reservationId, long managerId) {
+        Integer count = jdbcTemplate.queryForObject("""
+                SELECT COUNT(1)
+                FROM reservation r
+                JOIN store st ON r.store_id = st.id
+                WHERE r.id = ? AND st.member_id = ?
+                """,
+            Integer.class,
+            reservationId,
+            managerId);
+        return count != null && count == 1;
+    }
+
+    @Override
+    public void deleteByIdAndStoreMemberId(long reservationId, long managerId) {
+        jdbcTemplate.update("""
+            DELETE FROM reservation
+            WHERE id = ? AND store_id IN (SELECT id FROM store WHERE member_id = ?)
+            """, reservationId, managerId);
+    }
 }
