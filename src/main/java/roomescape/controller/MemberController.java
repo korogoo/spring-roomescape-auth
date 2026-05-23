@@ -19,8 +19,8 @@ import roomescape.dto.member.MemberLoginRequest;
 import roomescape.repository.token.TokenRepository;
 import roomescape.service.MemberService;
 
-@RestController
-@RequestMapping("/session/members")
+//@RestController
+//@RequestMapping("members")
 public class MemberController {
 
     private final MemberService memberService;

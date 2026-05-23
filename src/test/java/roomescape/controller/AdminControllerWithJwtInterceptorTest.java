@@ -1,23 +1,19 @@
 package roomescape.controller;
 
 import static org.hamcrest.Matchers.hasSize;
-import static org.mockito.Mockito.mock;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.util.Optional;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -26,20 +22,20 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import roomescape.auth.JwtProvider;
 import roomescape.domain.AuthConstants;
 import roomescape.domain.Member;
 import roomescape.domain.MemberRole;
 import roomescape.domain.Reservation;
-import roomescape.domain.Token;
-import roomescape.interceptor.AuthInterceptor;
-import roomescape.repository.token.TokenRepository;
+import roomescape.dto.member.MemberSummary;
+import roomescape.interceptor.JwtAuthInterceptor;
 import roomescape.service.ReservationService;
 
-@Disabled("세션 방식 인증/인가 미사용")
 @ExtendWith(MockitoExtension.class)
-class AdminControllerWithInterceptorTest {
+class AdminControllerWithJwtInterceptorTest {
 
-    private static final String SESSION_HEADER_KEY = AuthConstants.SESSION_HEADER_KEY;
+    private static final String JWT_HEADER_KEY = AuthConstants.JWT_HEADER_KEY;
+    private static final String JWT_HEADER_VALUE = AuthConstants.JWT_HEADER_PREFIX + "token";
     private static final LocalDate TOMORROW = LocalDate.now().plusDays(1);
     private static final LocalTime TIME = LocalTime.of(12, 0);
     private static final String THEME = "theme";
@@ -47,7 +43,7 @@ class AdminControllerWithInterceptorTest {
     @Mock
     private ReservationService reservationService;
     @Mock
-    private TokenRepository tokenRepository;
+    private JwtProvider jwtProvider;
     private MockMvc mockMvc;
 
     @InjectMocks
@@ -57,7 +53,7 @@ class AdminControllerWithInterceptorTest {
     void setFilter() {
         mockMvc = MockMvcBuilders
             .standaloneSetup(adminController)
-            .addInterceptors(new AuthInterceptor(tokenRepository))
+            .addInterceptors(new JwtAuthInterceptor(jwtProvider))
             .setControllerAdvice(new GlobalExceptionHandler())
             .build();
     }
@@ -74,27 +70,25 @@ class AdminControllerWithInterceptorTest {
     @Test
     void 일반_사용자는_접근할_수_없다() throws Exception {
         // given
-        Member member = savedMember(MemberRole.NORMAL);
-        when(tokenRepository.findByTokenValue("test-token"))
-            .thenReturn(Optional.of(savedToken(member)));
+        when(jwtProvider.extract(any()))
+            .thenReturn(new MemberSummary(1L, MemberRole.NORMAL));
 
         //when
         ResultActions result = mockMvc
             .perform(get("/admin/reservations")
-                .header(SESSION_HEADER_KEY, "test-token"));
+                .header(JWT_HEADER_KEY, JWT_HEADER_VALUE));
 
         //then
-        result.andExpect(status().isForbidden());
+        result.andExpect(status().isNotFound());
     }
 
     @Test
     void 관리자는_전체_예약을_조회할_수_있다() throws Exception {
         // given
         Reservation reservation = savedReservation();
-        Member member = savedMember(MemberRole.ADMIN);
 
-        when(tokenRepository.findByTokenValue("test-token"))
-            .thenReturn(Optional.of(savedToken(member)));
+        when(jwtProvider.extract(any()))
+            .thenReturn(new MemberSummary(1L, MemberRole.ADMIN));
         when(reservationService.findAll())
             .thenReturn(List.of(
                 reservation.withId(1L), reservation.withId(2L), reservation.withId(3L)));
@@ -102,7 +96,7 @@ class AdminControllerWithInterceptorTest {
         //when
         ResultActions result = mockMvc
             .perform(get("/admin/reservations")
-                .header(SESSION_HEADER_KEY, "test-token"));
+                .header(JWT_HEADER_KEY, JWT_HEADER_VALUE));
 
         //then
         result
@@ -114,10 +108,6 @@ class AdminControllerWithInterceptorTest {
 
         verify(reservationService, times(1)).findAll();
         verifyNoMoreInteractions(reservationService);
-    }
-
-    private Token savedToken(Member member) {
-        return new Token("test-token", LocalDateTime.now().plusDays(10), member.getId(), member.getRole());
     }
 
     private Reservation savedReservation() {

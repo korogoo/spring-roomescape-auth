@@ -33,6 +33,7 @@ import roomescape.exception.RoomEscapeException;
 import roomescape.repository.token.TokenRepository;
 import roomescape.service.MemberService;
 
+@Disabled("세션 방식 인증/인가 컨트롤러 미사용")
 @WebMvcTest(MemberController.class)
 class MemberControllerTest {
 

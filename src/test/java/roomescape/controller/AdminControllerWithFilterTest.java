@@ -13,6 +13,7 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -27,6 +28,7 @@ import roomescape.domain.Reservation;
 import roomescape.filter.AuthFilter;
 import roomescape.service.ReservationService;
 
+@Disabled("세션 방식 인증/인가 미사용")
 @ExtendWith(MockitoExtension.class)
 class AdminControllerWithFilterTest {
 

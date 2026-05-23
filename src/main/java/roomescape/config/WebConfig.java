@@ -6,30 +6,43 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.web.method.support.HandlerMethodArgumentResolver;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+import roomescape.auth.JwtProvider;
 import roomescape.filter.AuthFilter;
 import roomescape.interceptor.AuthInterceptor;
+import roomescape.interceptor.JwtAuthInterceptor;
 import roomescape.interceptor.LoginMemberArgumentResolver;
 import roomescape.repository.token.TokenRepository;
 
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
 
-    private final TokenRepository tokenRepository;
+    private final JwtProvider jwtProvider;
 
-    public WebConfig(TokenRepository tokenRepository) {
-        this.tokenRepository = tokenRepository;
+    public WebConfig(JwtProvider jwtProvider) {
+        this.jwtProvider = jwtProvider;
     }
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
-        registry.addInterceptor(new AuthInterceptor(tokenRepository))
+        registry.addInterceptor(new JwtAuthInterceptor(jwtProvider))
             .addPathPatterns("/**")
             .excludePathPatterns(List.of(
-                "/session/members/login",
-                "/session/members/normal/join",
-                "/session/members/admin/join"
+                "/members/login",
+                "/members/normal/join",
+                "/members/admin/join"
             ));
     }
+
+//    @Override
+//    public void addInterceptors(InterceptorRegistry registry) {
+//        registry.addInterceptor(new AuthInterceptor(tokenRepository))
+//            .addPathPatterns("/**")
+//            .excludePathPatterns(List.of(
+//                "members/login",
+//                "members/normal/join",
+//                "members/admin/join"
+//            ));
+//    }
 
     @Override
     public void addArgumentResolvers(List<HandlerMethodArgumentResolver> resolvers) {

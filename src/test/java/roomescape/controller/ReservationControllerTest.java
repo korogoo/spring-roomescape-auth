@@ -14,10 +14,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
-import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
@@ -27,14 +25,14 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
+import roomescape.auth.JwtProvider;
 import roomescape.domain.AuthConstants;
 import roomescape.domain.Member;
 import roomescape.domain.MemberRole;
 import roomescape.domain.Reservation;
-import roomescape.domain.Token;
+import roomescape.dto.member.MemberSummary;
 import roomescape.dto.reservation.ReservationCreateRequest;
 import roomescape.exception.ErrorCode;
-import roomescape.repository.token.TokenRepository;
 import roomescape.service.ReservationService;
 
 @WebMvcTest(ReservationController.class)
@@ -43,7 +41,8 @@ class ReservationControllerTest {
     private static final LocalDate TOMORROW = LocalDate.now().plusDays(1);
     private static final LocalTime TIME = LocalTime.of(12, 0);
     private static final String THEME = "theme";
-    private static final String SESSION_HEADER_KEY = AuthConstants.SESSION_HEADER_KEY;
+    private static final String JWT_HEADER_KEY = AuthConstants.JWT_HEADER_KEY;
+    private static final String JWT_HEADER_VALUE = AuthConstants.JWT_HEADER_PREFIX + "token";
 
     @Autowired
     private MockMvc mockMvc;
@@ -54,7 +53,7 @@ class ReservationControllerTest {
     @MockitoBean
     private ReservationService reservationService;
     @MockitoBean
-    private TokenRepository tokenRepository;
+    private JwtProvider jwtProvider;
 
     @Test
     void 비로그인_사용자는_예약을_생성할_수_없다() throws Exception {
@@ -83,15 +82,15 @@ class ReservationControllerTest {
         Reservation savedReservation = savedReservation();
         Member member = savedMember(role);
 
-        when(tokenRepository.findByTokenValue("test-token"))
-            .thenReturn(Optional.of(savedToken(member)));
+        when(jwtProvider.extract(any()))
+            .thenReturn(new MemberSummary(1L, role));
         when(reservationService.save(any(), anyLong()))
             .thenReturn(savedReservation);
 
         // when
         ResultActions result = mockMvc
             .perform(post("/reservations")
-                .header(SESSION_HEADER_KEY, "test-token")
+                .header(JWT_HEADER_KEY, JWT_HEADER_VALUE)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)));
 
@@ -110,8 +109,8 @@ class ReservationControllerTest {
         Reservation reservation = savedReservation();
         Member member = savedMember(MemberRole.NORMAL);
 
-        when(tokenRepository.findByTokenValue("test-token"))
-            .thenReturn(Optional.of(savedToken(member)));
+        when(jwtProvider.extract(any()))
+            .thenReturn(new MemberSummary(1L, MemberRole.NORMAL));
         when(reservationService.findAllByMemberId(anyLong()))
             .thenReturn(List.of(
                 reservation.withId(1L), reservation.withId(2L), reservation.withId(3L)));
@@ -119,7 +118,7 @@ class ReservationControllerTest {
         //when
         ResultActions result = mockMvc
             .perform(get("/reservations")
-                .header(SESSION_HEADER_KEY, "test-token"));
+                .header(JWT_HEADER_KEY, JWT_HEADER_VALUE));
 
         //then
         result
@@ -131,10 +130,6 @@ class ReservationControllerTest {
 
         verify(reservationService, times(1)).findAllByMemberId(member.getId());
         verifyNoMoreInteractions(reservationService);
-    }
-
-    private Token savedToken(Member member) {
-        return new Token("test-token", LocalDateTime.now().plusDays(10), member.getId(), member.getRole());
     }
 
     private Reservation savedReservation() {
