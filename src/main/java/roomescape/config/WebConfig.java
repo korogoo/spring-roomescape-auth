@@ -8,10 +8,8 @@ import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import roomescape.auth.JwtProvider;
 import roomescape.filter.AuthFilter;
-import roomescape.interceptor.AuthInterceptor;
 import roomescape.interceptor.JwtAuthInterceptor;
 import roomescape.interceptor.LoginMemberArgumentResolver;
-import roomescape.repository.token.TokenRepository;
 
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
